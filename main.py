@@ -76,6 +76,7 @@ class Task():
         '''Writes the current task to a data.csv file
            in the current directory
         '''
+
         to_write = {}
         for attr, value in self.__dict__.items():
             to_write[attr] = value
@@ -84,13 +85,26 @@ class Task():
             writer.writerow(to_write)
 
 
-def read_all():
-    with open('data.csv', 'r', newline='') as file:
+def read_all() -> list[dict]:
+    '''
+    Считывает данные из файла data.csv в текущей папке.
+    Возвращает:
+       list[dict] со всеми строками из файла
+    '''
+
+    with open('data.csv', 'r', encoding='utf-8', newline='') as file:
         reader = csv.DictReader(file)
         return list(reader)
 
 
-def create_new_task():
+def create_new_task() -> list:
+    '''
+    Получает данные для создания новой задачи от пользователя.
+
+    Возвращает:
+        список для формирования новой задачи.
+    '''
+
     print('Для создания новой задачи укажите следующие данные:')
     title = input('Название ')
     description = input('Краткое описание ')
@@ -101,7 +115,18 @@ def create_new_task():
     return [title, description, category, due_date, prio, status]
 
 
-def get_id(data):
+def get_id(data: list) -> int:
+    '''
+    Генерирует новое уникальное id для задачи, основываясь на предыдущем
+    наибольшем id.
+
+    Аргументы:
+        data(list): список всех текущих задач.
+
+    Возвращает:
+        новое уникальное id(int).
+    '''
+
     if len(data) == 0:
         new_id = 1
     else:
@@ -110,11 +135,26 @@ def get_id(data):
     return new_id
 
 
-def search_id(data, id, low, high):
+def search_id(data: list[dict], id: int, low: int, high: int) -> list:
+    '''
+    Осуществляет бинарный поиск по сортированному списку задач
+    для поиска задачи с заданным id.
+
+    Аргументы:
+        data(list[dict]): список, состоящий из словарей всех текущих задач
+        id(int): id задачи, которую необходимо найти
+        low(int): наименьший индекс поискового интервала
+        high(int): наибольший индекс поискового интервала
+
+    Вовращает:
+        Список [True, задача с искомым id] либо [False],
+        если задача не найдена
+    '''
+
     if low <= high:
         mid = (low + high) // 2
         if int(data[mid].get('id')) == id:
-            return [True, mid]
+            return [True, data[mid]]
         elif int(data[mid].get('id')) < id:
             return search_id(data, id, mid + 1, high)
         else:
@@ -122,22 +162,36 @@ def search_id(data, id, low, high):
     return [False]
 
 
+def delete_by_id(data: list[dict], id: int, field_names: list) -> None:
+    '''
+    Перезаписывает data.csv без задачи с указанным id.
+
+    Аргументы:
+        data(list[dict]): список со словарями с информацией о всех задачах
+        id(int): id задачи, которую необходимо удалить
+        field_names(list): список параметров задачи
+    '''
+
+    with open('data.csv', 'w', encoding='utf-8', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=field_names)
+        writer.writeheader()
+        for row in data:
+            if int(row.get('id')) != id:
+                writer.writerow(row)
+
+
 def main():
+    fieldnames = ['id',
+                  'title',
+                  'description',
+                  'category',
+                  'due_date',
+                  'prio',
+                  'status']
     if not os.path.isfile('data.csv'):
         with open('data.csv', 'w', encoding='utf-8', newline='') as file:
-            fieldnames = ['id',
-                          'title',
-                          'description',
-                          'category',
-                          'due_date',
-                          'prio',
-                          'status']
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
-    all_tasks = read_all()
-    search_result = search_id(all_tasks, 3, 0, len(all_tasks)-1)
-    if search_result[0] is True:
-        print(all_tasks[search_result[1]])
 
 
 if __name__ == "__main__":
