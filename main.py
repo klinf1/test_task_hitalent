@@ -1,6 +1,7 @@
 import csv
 import os
 
+from constants import FIELD_NAMES
 from sorting import merge, insertion_sort
 
 
@@ -149,19 +150,19 @@ def search_id(data: list[dict], id: int, low: int, high: int) -> list:
         high(int): наибольший индекс поискового интервала
 
     Вовращает:
-        Список [True, задача с искомым id] либо [False],
+        задачу с искомым id либо False,
         если задача не найдена
     '''
 
     if low <= high:
         mid = (low + high) // 2
         if int(data[mid].get('id')) == id:
-            return [True, data[mid]]
+            return data[mid]
         elif int(data[mid].get('id')) < id:
             return search_id(data, id, mid + 1, high)
         else:
             return search_id(data, id, low, mid - 1)
-    return [False]
+    return False
 
 
 def search_params(data: list[dict], params: dict):
@@ -253,6 +254,19 @@ def sort_tasks(data: list[dict]):
     return data
 
 
+def update_tasks(data: list[dict], params: list, id: int):
+    new_task = {'id': id}
+    for i in range(1, len(FIELD_NAMES)):
+        new_task[FIELD_NAMES[i]] = params[i - 1]
+    with open('data.csv', 'w', encoding='utf-8', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
+        writer.writeheader()
+        for row in data:
+            if int(row.get('id')) == id:
+                row = new_task
+            writer.writerow(row)
+
+
 def main():
     fieldnames = ['id',
                   'title',
@@ -265,6 +279,7 @@ def main():
         with open('data.csv', 'w', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
+    update_tasks(read_all(), ['f', 'f', 'f', 'f', 'f', 'f'], 12399)
 
 
 if __name__ == "__main__":
