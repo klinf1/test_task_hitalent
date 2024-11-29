@@ -162,6 +162,39 @@ def search_id(data: list[dict], id: int, low: int, high: int) -> list:
     return [False]
 
 
+def search_params(data: list[dict], params: dict):
+    '''
+    Функция для поиска по параметрам.
+
+    Аргументы:
+        data(list[dict]): список, состоящий из словарей всех текущих задач
+        params(dict): словарь, содержащий возможные варианты поиска
+
+    Возможности поиска:
+        По категории: ключ словаря 'category'
+        По статусу выполнения: ключ словаря 'status'
+        По ключевым словам: ключ словаря 'keyword'
+
+    Возвращает набор задач, соответствующих поисковому запросу
+    '''
+
+    result = []
+    for row in data:
+        if 'category' in params.keys() and row.get('category') == params.get(
+            'category'
+        ):
+            result.append(row)
+        if 'status' in params.keys() and row.get('status') == params.get(
+            'status'
+        ):
+            result.append(row)
+        if 'keyword' in params.keys():
+            for item in row.values():
+                if item == params.get('keyword'):
+                    result.append(row)
+    return set(result)
+
+
 def delete_by_id(data: list[dict], id: int, field_names: list) -> None:
     '''
     Перезаписывает data.csv без задачи с указанным id.
