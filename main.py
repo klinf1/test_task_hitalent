@@ -195,21 +195,29 @@ def search_params(data: list[dict], params: dict):
     return set(result)
 
 
-def delete_by_id(data: list[dict], id: int, field_names: list) -> None:
+def delete_by_id(data: list[dict], params: dict, field_names: list) -> None:
     '''
-    Перезаписывает data.csv без задачи с указанным id.
+    Перезаписывает data.csv без задачи с указанными id или категорией.
 
     Аргументы:
         data(list[dict]): список со словарями с информацией о всех задачах
-        id(int): id задачи, которую необходимо удалить
+        params(dict): словарь, содержащий инструкции по удалению
         field_names(list): список параметров задачи
+
+    Параметры:
+        id: удаляет задачу с указанным id
+        category: удаляет все задачи в этой категории
     '''
 
     with open('data.csv', 'w', encoding='utf-8', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=field_names)
         writer.writeheader()
         for row in data:
-            if int(row.get('id')) != id:
+            if 'id' in params.keys() and row.get('id') != params.get('id'):
+                writer.writerow(row)
+            if 'category' in params.keys() and row.get(
+                'category'
+            ) != params.get('category'):
                 writer.writerow(row)
 
 
