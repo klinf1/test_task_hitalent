@@ -195,7 +195,7 @@ def search_params(data: list[dict], params: dict):
     return set(result)
 
 
-def delete_by_id(data: list[dict], params: dict, field_names: list) -> None:
+def delete_tasks(data: list[dict], params: dict, field_names: list) -> None:
     '''
     Перезаписывает data.csv без задачи с указанными id или категорией.
 
