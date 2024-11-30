@@ -6,6 +6,7 @@ from datetime import datetime
 from constants import FIELD_NAMES, RU_TO_ENG, FILE_NAME
 from exceptions import (CategoryError, DateError, DescriptionError,
                         PrioError, TitleError)
+from sorting import sort_tasks
 
 
 class Task():
@@ -28,8 +29,8 @@ class Task():
 
     Методы:
         write_csv(): добавляет информацию об объекте Task в файл
-            data.csv в текущей директории
-        update_csv(data(list[dict])): перезаписывает файл data.csv с
+            FILE_NAME в текущей директории
+        update_csv(data(list[dict])): перезаписывает файл FILE_NAME с
             данными об объекте Task
     '''
 
@@ -151,233 +152,265 @@ class Task():
                 writer.writerow(row)
 
 
-def read_all() -> list[dict]:
+class TaskManager():
     '''
-    Считывает данные из файла FILE_NAME в текущей папке.
-    Возвращает:
-       list[dict] со всеми строками из файла
-    '''
+    Класс для чтения, удаления, и изменения данный в FILENAME
 
-    with open(FILE_NAME, 'r', encoding='utf-8', newline='') as file:
-        reader = csv.DictReader(file)
-        return list(reader)
-
-
-def get_id() -> int:
-    '''
-    Генерирует новое уникальное id для задачи, основываясь на предыдущем
-    наибольшем id.
-
-    Аргументы:
-        data(list): список всех текущих задач.
-
-    Возвращает:
-        новое уникальное id(int).
+    Методы:
+        get_id(data: list[dict]): получает новый уникальный номер id(int)
+        search_id(data: list[dict], id(int)): находит задачу с указанным id
+        validate_task(params[dict]): проверяет правильность
+            введенных пользователем данных
+        read_all(): считывает все данные из FILENAME
+        create_new_task(data: list[dict]): получает данные для создания
+            новой задачи
+        search_params(data: list[dict], params: dict): осуществляет поиск по
+            параметрам по всем задачам
+        delete_tasks(data: list[dict], params: dict): Перезаписывает FILE_NAME
+            без задачи с указанными id или категорией.
+        update_tasks(data: list[dict], id: int, setcomplete: bool = False):
+            обновляет данные о задаче с id=id
     '''
 
-    data = read_all()
-    if len(data) == 0:
-        new_id = 1
-    else:
-        prev_id = data[-1].get('id')
-        new_id = int(prev_id) + 1
-    return new_id
+    def get_id(self, data: list[dict]) -> int:
+        '''
+        Получает новый уникальный id
 
+        Аргументы:
+            data(list[dict]): список словарей всех задач
 
-def validate_task(params: dict) -> Task:
-    '''
-    Функция для проверки введенных пользователем данных
-    перед записью новой задачи.
-    Если данные были введены неверно, изменяет словарь params,
-    получая данные от пользователя.
+        Возвращает:
+            id(int): новый уникальный id
+        '''
 
-    Аргументы:
-        params(dict): словарь, ключи которого - названия полей,
-            а значения - данные о новой задаче.
+        if len(data) == 0:
+            new_id = 1
+        else:
+            prev_id = data[-1].get('id')
+            new_id = int(prev_id) + 1
+            existing_ids = []
+            for i in range(0, len(data) - 1):
+                existing_ids.append(data[i].get('id'))
+            if new_id in existing_ids:
+                data = sort_tasks(data)
+                new_id = int(data[-1].get('id')) + 1
+        return new_id
 
-    Возвращает:
-        Экземпляр класса Task с подтвержденными данными.
-    '''
-    validated = False
-    while validated is False:
-        try:
-            task = Task(*list(params.values()))
-            validated = True
-        except TitleError as e:
-            print(e)
-            params['title'] = input('Введите название\n')
-        except DescriptionError as e:
-            print(e)
-            params['description'] = input('Введите краткое описание задачи\n')
-        except PrioError as e:
-            print(e)
-            print('Введите приоритет: низкий, средний или высокий')
-            params['prio'] = input()
-        except DateError as e:
-            print(e)
-            print('Укажите дату, к которой задачу нужно выполнить ',
-                  'в формате DD-MM-YYYY')
-            params['date'] = input()
-        except CategoryError as e:
-            print(e)
-            print('Укажите название категории, к которой относится задача\n')
-            params['category'] = input()
-    return task
+    def search_id(self, data: list[dict], id: int) -> dict | str:
+        '''
+        Метод для поиска задачи с указанным id
 
+        Аргументы:
+            data(list[dict]): список словарей всех задач
+            id(int): id задачи, которую необходимо найти
 
-def create_new_task(id: int) -> list:
-    '''
-    Получает данные для создания новой задачи от пользователя,
-    создает экземпляр класса Task и добавляет новую задачу в конец
-    data.csv.
-    '''
+        Возвращает:
+            словарь с данными искомой задачи или строку с
+            данными об ошибке
+        '''
 
-    print('Для создания новой задачи укажите следующие данные:')
-    title = input('Название ')
-    description = input('Краткое описание ')
-    category = input('Название категории, к которой она относится ')
-    date = input(
-        'Дату, к которой её нужно выполнить в формате DD-MM-YYYY '
-    )
-    prio = input('Приоритет: низкий, средний или высокий ')
-    data = [id, title, description, category, date, prio,]
-    params = {}
-    for i in range(0, len(data)):
-        params[FIELD_NAMES[i]] = data[i]
-    task = validate_task(params)
-    task.write_csv()
-    print(f'Задача с id {id} создана успешно')
-
-
-def search_id(data: list[dict], id: int) -> list:
-    '''
-    Осуществляет бинарный поиск по сортированному списку задач
-    для поиска задачи с заданным id.
-
-    Аргументы:
-        data(list[dict]): список, состоящий из словарей всех текущих задач
-        id(int): id задачи, которую необходимо найти
-
-    Вовращает:
-        задачу с искомым id либо строку с описанием ошибки,
-        если задача не найдена
-    '''
-
-    low = 0
-    high = len(data) - 1
-    mid = 0
-    if len(data) == 0:
+        low = 0
+        high = len(data) - 1
+        mid = 0
+        if len(data) == 0:
+            return 'Задачи с таким id не существует'
+        while high >= low:
+            mid = (high + low) // 2
+            if int(data[mid].get('id')) < id:
+                low = mid + 1
+            elif int(data[mid].get('id')) > id:
+                high = mid - 1
+            else:
+                return data[mid]
         return 'Задачи с таким id не существует'
-    while high >= low:
-        mid = (high + low) // 2
-        if int(data[mid].get('id')) < id:
-            low = mid + 1
-        elif int(data[mid].get('id')) > id:
-            high = mid - 1
-        else:
-            return data[mid]
-    return 'Задачи с таким id не существует'
 
+    def validate_task(self, params: dict) -> Task:
+        '''
+        Метод для проверки введенных пользователем данных
+        перед записью новой задачи.
+        Если данные были введены неверно, изменяет словарь params,
+        получая данные от пользователя.
 
-def search_params(data: list[dict], params: dict) -> list:
-    '''
-    Функция для поиска по параметрам.
+        Аргументы:
+            params(dict): словарь, ключи которого - названия полей,
+                а значения - данные о новой задаче.
 
-    Аргументы:
-        data(list[dict]): список, состоящий из словарей всех текущих задач
-        params(dict): словарь, содержащий возможные варианты поиска
+        Возвращает:
+            Экземпляр класса Task с подтвержденными данными.
+        '''
+        validated = False
+        while validated is False:
+            try:
+                task = Task(*list(params.values()))
+                validated = True
+            except TitleError as e:
+                print(e)
+                params['title'] = input('Введите название\n')
+            except DescriptionError as e:
+                print(e)
+                print('Введите краткое описание задачи')
+                params['description'] = input()
+            except PrioError as e:
+                print(e)
+                print('Введите приоритет: низкий, средний или высокий')
+                params['prio'] = input()
+            except DateError as e:
+                print(e)
+                print('Укажите дату, к которой задачу нужно выполнить ',
+                      'в формате DD-MM-YYYY')
+                params['date'] = input()
+            except CategoryError as e:
+                print(e)
+                print('Укажите название категории, ',
+                      'к которой относится задача\n')
+                params['category'] = input()
+        return task
 
-    Возможности поиска:
-        По категории: ключ словаря 'category'
-        По статусу выполнения: ключ словаря 'status'
-        По ключевым словам: ключ словаря 'keyword'
+    def read_all(self) -> list[dict]:
+        '''
+        Считывает данные из файла FILE_NAME в текущей папке.
 
-    Возвращает cписок задач, соответствующих поисковому запросу,
-    или список со строкой, описывающей ошибку.
-    '''
+        Возвращает:
+            список словарей всех задач
+        '''
 
-    result = []
-    if len(data) == 0:
-        result = ['Сейчас нет активных задач']
-    for row in data:
-        if 'category' in params.keys() and row.get('category') == params.get(
-            'category'
-        ):
-            result.append(row)
-        if 'status' in params.keys() and row.get('status') == params.get(
-            'status'
-        ):
-            result.append(row)
-        if 'keyword' in params.keys():
-            for item in list(row.values())[1:]:
-                if params.get('keyword') in item.lower() and row not in result:
-                    result.append(row)
-    if result == []:
-        result = ['Такой задачи не существует']
-    return result
+        with open(FILE_NAME, 'r', encoding='utf-8', newline='') as file:
+            reader = csv.DictReader(file)
+            return list(reader)
 
+    def create_new_task(self, data: list[dict]) -> None:
+        '''
+        Получает данные для создания новой задачи от пользователя,
+        создает экземпляр класса Task и добавляет новую задачу в конец
+        data.csv.
 
-def delete_tasks(data: list[dict], params: dict) -> None:
-    '''
-    Перезаписывает FILE_NAME без задачи с указанными id или категорией.
+        Аргументы:
+            data(list[dict]): список словарей всех задач
+        '''
 
-    Аргументы:
-        data(list[dict]): список со словарями с информацией о всех задачах
-        params(dict): словарь, содержащий инструкции по удалению
+        id = self.get_id(data)
+        print('Для создания новой задачи укажите следующие данные:')
+        title = input('Название ')
+        description = input('Краткое описание ')
+        category = input('Название категории, к которой она относится ')
+        date = input(
+            'Дату, к которой её нужно выполнить в формате DD-MM-YYYY '
+        )
+        prio = input('Приоритет: низкий, средний или высокий ')
+        new_data = [id, title, description, category, date, prio,]
+        params = {}
+        for i in range(0, len(new_data)):
+            params[FIELD_NAMES[i]] = new_data[i]
+        task = self.validate_task(params)
+        task.write_csv()
+        print(f'Задача с id {id} создана успешно')
 
-    Параметры:
-        id: удаляет задачу с указанным id
-        category: удаляет все задачи в этой категории
-    '''
+    def search_params(self, data: list[dict], params: dict) -> list:
+        '''
+        Метод для поиска по параметрам.
 
-    with open(FILE_NAME, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
-        writer.writeheader()
+        Аргументы:
+            data(list[dict]): список словарей всех задач
+            params(dict): словарь, содержащий возможные варианты поиска
+
+        Возможности поиска:
+            По категории: ключ словаря 'category'
+            По статусу выполнения: ключ словаря 'status'
+            По ключевым словам: ключ словаря 'keyword'
+
+        Возвращает:
+            cписок задач, соответствующих поисковому запросу,
+            или список со строкой, описывающей ошибку.
+        '''
+
+        result = []
+        if len(data) == 0:
+            result = ['Сейчас нет активных задач']
         for row in data:
-            if 'id' in params.keys() and int(row.get('id')) != params.get(
-                'id'
+            if 'category' in params.keys() and (
+                row.get('category') == params.get('category')
             ):
-                writer.writerow(row)
-            if 'category' in params.keys() and row.get(
-                'category'
-            ) != params.get('category'):
-                writer.writerow(row)
+                result.append(row)
+            if 'status' in params.keys() and row.get('status') == params.get(
+                'status'
+            ):
+                result.append(row)
+            if 'keyword' in params.keys():
+                for item in list(row.values())[1:]:
+                    if params.get('keyword') in item.lower() and (
+                        row not in result
+                    ):
+                        result.append(row)
+        if result == []:
+            result = ['Такой задачи не существует']
+        return result
 
+    def delete_tasks(self, data: list[dict], params: dict) -> None:
+        '''
+        Перезаписывает FILE_NAME без задачи с указанными id или категорией.
 
-def update_tasks(id: int, data: list[dict], setcomplete: bool = False) -> None:
-    '''Функция для обновления данных о задаче. Получает
-    старую задачу с указанным id, формирует новую задачу и
-    записывает ее в FILE_NAME
+        Аргументы:
+            data(list[dict]): список словарей всех задач
+            params(dict): словарь, содержащий инструкции по удалению
 
-    Аргументы:
-        id(int): id задачи, которую необходимо обновить
-        data(list[dict]): список словарей с данными о всех задачах
-        setcomplete(bool, default - False): если передано True,
-            функция обновит статус задачи на "выполнено"
-    '''
+        Параметры:
+            id: удаляет задачу с указанным id
+            category: удаляет все задачи в этой категории
+        '''
 
-    old_task = search_id(data, id)
-    if type(old_task) is str:
-        print(old_task)
-    else:
-        if setcomplete:
-            old_task['status'] = 'выполнено'
+        with open(FILE_NAME, 'w', encoding='utf-8', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
+            writer.writeheader()
+            for row in data:
+                if 'id' in params.keys() and int(row.get('id')) != params.get(
+                    'id'
+                ):
+                    writer.writerow(row)
+                if 'category' in params.keys() and row.get(
+                    'category'
+                ) != params.get('category'):
+                    writer.writerow(row)
+
+    def update_tasks(
+            self,
+            data: list[dict],
+            id: int,
+            setcomplete: bool = False
+            ) -> None:
+        '''
+        Метод для обновления данных о задаче. Получает
+        старую задачу с указанным id, формирует новую задачу и
+        записывает ее в FILE_NAME
+
+        Аргументы:
+            id(int): id задачи, которую необходимо обновить
+            data(list[dict]): список словарей всех задач
+            setcomplete(bool, default - False): если передано True,
+                метод обновит статус задачи на "выполнено"
+        '''
+
+        old_task = self.search_id(data, id)
+        if type(old_task) is str:
+            print(old_task)
         else:
-            print('Доступные для изменения поля: название, '
-                  'описание, категория, срок, приоритет')
-            print('Введите названия полей, которые',
-                  ' вы бы хотели изменить через проблел')
-            categories = input().lower().split()
-            for item in categories:
-                if item in RU_TO_ENG.keys():
-                    old_task[RU_TO_ENG[item]] = input(f'Введите {item} ')
-                else:
-                    print(f'Такого поля "{item}" не существует, ',
-                          'перехожу к следующему')
-        new_task = validate_task(old_task)
-        new_task.update_csv(data)
-        print('Задача успешно обновлена\n',
-              f'{search_id(data, id, 0, len(data))}')
+            if setcomplete:
+                old_task['status'] = 'выполнено'
+            else:
+                print('Доступные для изменения поля: название, '
+                      'описание, категория, срок, приоритет')
+                print('Введите названия полей, которые',
+                      ' вы бы хотели изменить через проблел')
+                categories = input().lower().split()
+                for item in categories:
+                    if item in RU_TO_ENG.keys():
+                        old_task[RU_TO_ENG[item]] = input(f'Введите {item} ')
+                    else:
+                        print(f'Такого поля "{item}" не существует, ',
+                              'перехожу к следующему')
+            new_task = self.validate_task(old_task)
+            new_task.update_csv(data)
+            print('Задача успешно обновлена\n',
+                  f'{self.search_id(data, id)}')
 
 
 def input_id() -> int:
@@ -408,7 +441,7 @@ def main():
             writer.writeheader()
     print('Добро пожаловать в менеджер задач!')
     while True:
-        data = read_all()
+        data = TaskManager().read_all()
         print('Что бы вы хотели сделать? Доступнные варианты: ',
               'Создать, Просмотреть все, Найти по категории, '
               'Найти по статусу, Найти по ключевым словам, ',
@@ -416,7 +449,7 @@ def main():
               'Удалить по id, Удалить категорию ')
         todo = input().lower()
         if todo == 'создать':
-            create_new_task(get_id())
+            TaskManager().create_new_task(data)
         elif todo == 'просмотреть все':
             if data == []:
                 print('Сейчас нет активных задач')
@@ -425,35 +458,37 @@ def main():
         elif todo == 'найти по категории':
             category = input('Введите категорию\n')
             params = {'category': category}
-            for item in search_params(data, params):
+            for item in TaskManager().search_params(data, params):
                 print(item)
         elif todo == 'найти по статусу':
             status = input('Введите статус: выполнено или не выполнено\n')
             params = {'status': status.lower()}
-            for item in search_params(data, params):
+            for item in TaskManager().search_params(data, params):
                 print(item)
         elif todo == 'найти по ключевым словам':
             keyword = input('Введите ваш запрос\n')
             params = {'keyword': keyword}
-            for item in search_params(data, params):
+            for item in TaskManager().search_params(data, params):
                 print(item)
         elif todo == 'найти по id':
             id = input_id()
-            print(search_id(data, id))
+            print(TaskManager().search_id(data, id))
         elif todo == 'изменить':
             id = input_id()
-            update_tasks(id, data)
+            TaskManager().update_tasks(data, id)
         elif todo == 'отметить выполнение':
             id = input_id()
-            update_tasks(id, data, True)
+            TaskManager().update_tasks(data, id, True)
         elif todo == 'удалить по id':
-            id = input_id()
-            delete_tasks(data, {'id': id})
+            params = {}
+            params['id'] = input_id()
+            TaskManager().delete_tasks(data, params)
         elif todo == 'удалить категорию':
             print('Введите категорию. Все задачи',
                   ' из этой категории будут удалены')
-            category = input()
-            delete_tasks(data, {'category': category})
+            params = {}
+            params['category'] = input()
+            TaskManager().delete_tasks(data, params)
         else:
             print('К сожалению, менеджер не может понять эту комманду')
 
