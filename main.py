@@ -22,9 +22,16 @@ class Task():
         prio(str): приоритет задания, может быть низким, средним, высоким
         status(str): статус выполнения задания
 
-    Methods:
-    write_csv(): записывает информацию об объекте задания в файл
-    data.csv в текущей директории
+    Валидация:
+        (title, description, category, status) не могут быть пустыми строками
+        prio может принимать значения "низкий", "средний", "высокий"
+        date может принимать значения дат в формате DD-MM-YYYY
+
+    Методы:
+        write_csv(): добавляет информацию об объекте Task в файл
+            data.csv в текущей директории
+        update_csv(data(list[dict])): перезаписывает файл data.csv с
+            данными об объекте Task
     '''
 
     def __init__(self,
@@ -120,23 +127,30 @@ class Task():
             raise StatusError('У задания должен быть статус выполнения')
         self._status = status
 
-    def get_dict(self):
+    def get_dict(self) -> dict:
+        '''Формирует словарь на основе экземпляра класса Task.'''
+
         to_write = {}
         for attr, value in self.__dict__.items():
             to_write[attr.replace('_', '')] = value
         return to_write
 
     def write_csv(self) -> None:
-        '''Writes the current task to a data.csv file
-           in the current directory
-        '''
+        '''Добавляет данные текущего Task в конец файла data.csv'''
 
         to_write = self.get_dict()
         with open('data.csv', 'a', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
             writer.writerow(to_write)
 
-    def update_csv(self, data: list[dict]):
+    def update_csv(self, data: list[dict]) -> None:
+        '''Перезаписывает файл data.csv с данными обновленного Task
+
+        Аргументы:
+            data(list[dict]): список словарей со всеми ранее
+                записанными задачами
+        '''
+
         to_write = self.get_dict()
         with open('data.csv', 'w', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
@@ -181,6 +195,19 @@ def get_id() -> int:
 
 
 def validate_task(params: dict) -> Task:
+    '''
+    Функция для проверки введенных пользователем данных
+    перед записью новой задачи.
+    Если данные были введены неверно, изменяет словарь params,
+    получая данные от пользователя.
+
+    Аргументы:
+        params(dict): словарь, ключи которого - названия полей,
+            а значения - данные о новой задаче.
+
+    Возвращает:
+        Экземпляр класса Task с подтвержденными данными.
+    '''
     validated = False
     while validated is False:
         try:
@@ -214,10 +241,9 @@ def validate_task(params: dict) -> Task:
 
 def create_new_task(id: int) -> list:
     '''
-    Получает данные для создания новой задачи от пользователя.
-
-    Возвращает:
-        список для формирования новой задачи.
+    Получает данные для создания новой задачи от пользователя,
+    создает экземпляр класса Task и добавляет новую задачу в конец
+    data.csv.
     '''
 
     print('Для создания новой задачи укажите следующие данные:')
@@ -366,12 +392,16 @@ def sort_tasks(data: list[dict]):
     return data
 
 
-def update_tasks(id: int, data: list[dict], setcomplete=False):
-    '''Функция для обновления данных о задаче.
+def update_tasks(id: int, data: list[dict], setcomplete: bool = False):
+    '''Функция для обновления данных о задаче. Получает
+    старую задачу с указанным id, формирует новую задачу и
+    записывает ее в data.csv
 
     Аргументы:
+        id(int): id задачи, которую необходимо обновить
         data(list[dict]): список словарей с данными о всех задачах
-        new_task(dict): задача с обновленными данными
+        setcomplete(bool, default - False): если передано True,
+            функция обновит статус задачи на "Выполнено!"
     '''
 
     old_task = search_id(data, id, 0, len(data))
