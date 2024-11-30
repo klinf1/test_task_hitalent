@@ -6,7 +6,6 @@ from datetime import datetime
 from constants import FIELD_NAMES, RU_TO_ENG
 from exceptions import (CategoryError, DateError, DescriptionError,
                         PrioError, StatusError, TitleError)
-from sorting import merge, insertion_sort
 
 
 class Task():
@@ -360,36 +359,6 @@ def delete_tasks(data: list[dict], params: dict) -> None:
                 'category'
             ) != params.get('category'):
                 writer.writerow(row)
-
-
-def sort_tasks(data: list[dict]):
-    '''
-    Функция, для сортировки списка задач по id в порядке возрастания.
-    Основана на алгоритме TimSort.
-
-    Аргументы:
-        data(list[dict]): список словарей с данными о всех задачах.
-
-    Возвращает:
-        list[dict]: список отсортированных по id словарей задач
-    '''
-
-    min_run = 32
-    n = len(data)
-    for i in range(0, n, min_run):
-        insertion_sort(data, i, min((i + min_run - 1), n - 1))
-    size = min_run
-    while size < n:
-        for start in range(0, n, size * 2):
-            mid = start + size - 1
-            end = min((start + size*2 - 1), (n - 1))
-            merged_data = merge(
-                data[start:mid + 1],
-                data[mid + 1:end + 1]
-            )
-            data[start:start + len(merged_data)] = merged_data
-        size *= 2
-    return data
 
 
 def update_tasks(id: int, data: list[dict], setcomplete: bool = False):
