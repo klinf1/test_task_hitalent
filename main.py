@@ -1,7 +1,7 @@
 import csv
 import os
 
-from constants import FIELD_NAMES
+from constants import FIELD_NAMES, RU_TO_ENG
 from sorting import merge, insertion_sort
 
 
@@ -10,20 +10,13 @@ class Task():
     Класс для объектов Task
 
     Атрибуты:
-    id
-        уникально для каждого объекта
-    title: str
-        название задания
-    description: str
-        краткое описание задания
-    category: str
-        категория задания
-    due_date: str
-        дата, к которой нужно выполнить задание
-    prio: str
-        приоритетность задания, может быть низким, средним, высоким
-    status: str
-        статус выполнения задания
+        id: уникально для каждого объекта
+        title(str): название задания
+        description(str): краткое описание задания
+        category(str): категория задания
+        due_date(str): дата, к которой нужно выполнить задание
+        prio(str): приоритет задания, может быть низким, средним, высоким
+        status(str): статус выполнения задания
 
     Methods:
     write_csv(): записывает информацию об объекте задания в файл
@@ -40,20 +33,13 @@ class Task():
                  status: str):
         '''
         Атрибуты:
-        id
-            уникально для каждого объекта
-        title: str
-            название задания
-        description: str
-            краткое описание задания
-        category: str
-            категория задания
-        due_date: str
-            дата, к которой нужно выполнить задание
-        prio: str
-            приоритетность задания, может быть низким, средним, высоким
-        status: str
-            статус выполнения задания
+            id: уникально для каждого объекта
+            title(str): название задания
+            description(str): краткое описание задания
+            category(str): категория задания
+            due_date(str): дата, к которой нужно выполнить задание
+            prio(str): приоритет задания, может быть низким, средним, высоким
+            status(str): статус выполнения задания
         '''
         self.id = id
         self.title = title
@@ -100,7 +86,28 @@ def read_all() -> list[dict]:
         return list(reader)
 
 
-def create_new_task() -> list:
+def get_id() -> int:
+    '''
+    Генерирует новое уникальное id для задачи, основываясь на предыдущем
+    наибольшем id.
+
+    Аргументы:
+        data(list): список всех текущих задач.
+
+    Возвращает:
+        новое уникальное id(int).
+    '''
+
+    data = read_all()
+    if len(data) == 0:
+        new_id = 1
+    else:
+        prev_id = data[-1].get('id')
+        new_id = int(prev_id) + 1
+    return new_id
+
+
+def create_new_task(id: int) -> list:
     '''
     Получает данные для создания новой задачи от пользователя.
 
@@ -115,27 +122,9 @@ def create_new_task() -> list:
     due_date = input('Дату, к которой её нужно выполнить ')
     prio = input('Приоритет: низкий, средний или высокий ')
     status = input('Текущий статус выполнения ')
-    return [title, description, category, due_date, prio, status]
-
-
-def get_id(data: list) -> int:
-    '''
-    Генерирует новое уникальное id для задачи, основываясь на предыдущем
-    наибольшем id.
-
-    Аргументы:
-        data(list): список всех текущих задач.
-
-    Возвращает:
-        новое уникальное id(int).
-    '''
-
-    if len(data) == 0:
-        new_id = 1
-    else:
-        prev_id = data[-1].get('id')
-        new_id = int(prev_id) + 1
-    return new_id
+    task = Task(id, title, description, category, due_date, prio, status)
+    task.write_csv()
+    print(f'Задача с id {id} создана успешно')
 
 
 def search_id(data: list[dict], id: int, low: int, high: int) -> list:
@@ -154,15 +143,21 @@ def search_id(data: list[dict], id: int, low: int, high: int) -> list:
         если задача не найдена
     '''
 
+    result = []
+    if len(data) == 0:
+        result = ['Сейчас нет активных задач']
     if low <= high:
         mid = (low + high) // 2
+        print(mid)
         if int(data[mid].get('id')) == id:
-            return data[mid]
+            result = data[mid]
         elif int(data[mid].get('id')) < id:
-            return search_id(data, id, mid + 1, high)
+            result = search_id(data, id, mid + 1, high)
         else:
-            return search_id(data, id, low, mid - 1)
-    return False
+            result = search_id(data, id, low, mid - 1)
+    if result == []:
+        result = ['Такой задачи не существует']
+    return result
 
 
 def search_params(data: list[dict], params: dict):
@@ -178,10 +173,12 @@ def search_params(data: list[dict], params: dict):
         По статусу выполнения: ключ словаря 'status'
         По ключевым словам: ключ словаря 'keyword'
 
-    Возвращает набор задач, соответствующих поисковому запросу
+    Возвращает cписок задач, соответствующих поисковому запросу
     '''
 
     result = []
+    if len(data) == 0:
+        result = ['Сейчас нет активных задач']
     for row in data:
         if 'category' in params.keys() and row.get('category') == params.get(
             'category'
@@ -192,20 +189,21 @@ def search_params(data: list[dict], params: dict):
         ):
             result.append(row)
         if 'keyword' in params.keys():
-            for item in row.values():
-                if item == params.get('keyword'):
+            for item in list(row.values())[1:]:
+                if params.get('keyword') in item and row not in result:
                     result.append(row)
-    return set(result)
+    if result == []:
+        result = ['Такой задачи не существует']
+    return result
 
 
-def delete_tasks(data: list[dict], params: dict, field_names: list) -> None:
+def delete_tasks(data: list[dict], params: dict) -> None:
     '''
     Перезаписывает data.csv без задачи с указанными id или категорией.
 
     Аргументы:
         data(list[dict]): список со словарями с информацией о всех задачах
         params(dict): словарь, содержащий инструкции по удалению
-        field_names(list): список параметров задачи
 
     Параметры:
         id: удаляет задачу с указанным id
@@ -213,10 +211,12 @@ def delete_tasks(data: list[dict], params: dict, field_names: list) -> None:
     '''
 
     with open('data.csv', 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=field_names)
+        writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
         writer.writeheader()
         for row in data:
-            if 'id' in params.keys() and row.get('id') != params.get('id'):
+            if 'id' in params.keys() and int(row.get('id')) != params.get(
+                'id'
+            ):
                 writer.writerow(row)
             if 'category' in params.keys() and row.get(
                 'category'
@@ -254,32 +254,100 @@ def sort_tasks(data: list[dict]):
     return data
 
 
-def update_tasks(data: list[dict], params: list, id: int):
-    new_task = {'id': id}
-    for i in range(1, len(FIELD_NAMES)):
-        new_task[FIELD_NAMES[i]] = params[i - 1]
+def update_tasks(data: list[dict], new_task: dict):
+    '''Функция для обновления данных о задаче.
+
+    Аргументы:
+        data(list[dict]): список словарей с данными о всех задачах
+        new_task(dict): задача с обновленными данными
+    '''
+
     with open('data.csv', 'w', encoding='utf-8', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
         writer.writeheader()
         for row in data:
-            if int(row.get('id')) == id:
+            if int(row.get('id')) == int(new_task.get('id')):
                 row = new_task
             writer.writerow(row)
 
 
 def main():
-    fieldnames = ['id',
-                  'title',
-                  'description',
-                  'category',
-                  'due_date',
-                  'prio',
-                  'status']
     if not os.path.isfile('data.csv'):
         with open('data.csv', 'w', encoding='utf-8', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer = csv.DictWriter(file, FIELD_NAMES)
             writer.writeheader()
-    update_tasks(read_all(), ['f', 'f', 'f', 'f', 'f', 'f'], 12399)
+    print('Добро пожаловать в менеджер задач!')
+    while True:
+        print('Что бы вы хотели сделать? Доступнные варианты: ',
+              'Создать, Просмотреть все, Найти по категории, '
+              'Найти по статусу, Найти по ключевым словам, ',
+              'Найти по id, Изменить, Отметить выполнение',
+              'Удалить по id, Удалить категорию ')
+        todo = input().lower()
+        if todo == 'создать':
+            create_new_task(get_id())
+        elif todo == 'просмотреть все':
+            data = read_all()
+            for row in data:
+                print(row)
+        elif todo == 'найти по категории':
+            data = read_all()
+            category = input('Введите категорию\n')
+            params = {'category': category}
+            for item in search_params(data, params):
+                print(item)
+        elif todo == 'найти по статусу':
+            data = read_all()
+            status = input('Введите статус\n')
+            params = {'status': status}
+            for item in search_params(data, params):
+                print(item)
+        elif todo == 'найти по ключевым словам':
+            data = read_all()
+            keyword = input('Введите ваш запрос\n')
+            params = {'keyword': keyword}
+            for item in search_params(data, params):
+                print(item)
+        elif todo == 'найти по id':
+            data = read_all()
+            id = int(input('Введите id\n'))
+            print(search_id(data, id, 0, len(data)))
+        elif todo == 'изменить':
+            data = read_all()
+            id = int(input('Введите id\n'))
+            old_task = search_id(data, id, 0, len(data))
+            print('Доступные для изменения поля: название, '
+                  'описание, категория, срок, приоритет, статус')
+            print('Введите названия полей, которые',
+                  ' вы бы хотели изменить через проблел')
+            categories = input().lower().split()
+            for item in categories:
+                if item in RU_TO_ENG.keys():
+                    old_task[RU_TO_ENG[item]] = input(f'Введите {item} ')
+                else:
+                    print(f'Такого поля "f{item}" не существует,',
+                          ' перехожу к следующему')
+            update_tasks(data, old_task)
+            print('Задача успешно обновлена\n',
+                  f'{search_id(data, id, 0, len(data))}')
+        elif todo == 'отметить выполнение':
+            data = read_all()
+            id = int(input('Введите id\n'))
+            task = search_id(data, id, 0, len(data))
+            task['status'] = 'Выполнено!'
+            update_tasks(data, task)
+        elif todo == 'удалить по id':
+            data = read_all()
+            id = int(input('Введите id\n'))
+            delete_tasks(data, {'id': id})
+        elif todo == 'удалить категорию':
+            data = read_all()
+            print('Введите категорию. Все задачи',
+                  ' из этой категории будут удалены')
+            category = input()
+            delete_tasks(data, {'category': category})
+        else:
+            print('К сожалению, менеджер не может понять эту комманду')
 
 
 if __name__ == "__main__":
