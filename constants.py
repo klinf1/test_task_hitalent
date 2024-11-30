@@ -1,3 +1,5 @@
+FILE_NAME = 'data.csv'
+
 FIELD_NAMES = ['id',
                'title',
                'description',

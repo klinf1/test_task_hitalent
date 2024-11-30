@@ -3,7 +3,7 @@ import os
 
 from datetime import datetime
 
-from constants import FIELD_NAMES, RU_TO_ENG
+from constants import FIELD_NAMES, RU_TO_ENG, FILE_NAME
 from exceptions import (CategoryError, DateError, DescriptionError,
                         PrioError, TitleError)
 
@@ -50,7 +50,8 @@ class Task():
             category(str): категория задания
             date(str): дата, к которой нужно выполнить задание
             prio(str): приоритет задания, может быть низким, средним, высоким
-            status(str): статус выполнения задания
+            status(str): статус выполнения задания.
+                По умолчанию: "не выполнено"
         '''
         self.id = id
         self.title = title
@@ -125,15 +126,15 @@ class Task():
         return to_write
 
     def write_csv(self) -> None:
-        '''Добавляет данные текущего Task в конец файла data.csv'''
+        '''Добавляет данные текущего Task в конец файла FILE_NAME'''
 
         to_write = self.get_dict()
-        with open('data.csv', 'a', encoding='utf-8', newline='') as file:
+        with open(FILE_NAME, 'a', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
             writer.writerow(to_write)
 
     def update_csv(self, data: list[dict]) -> None:
-        '''Перезаписывает файл data.csv с данными обновленного Task
+        '''Перезаписывает файл FILE_NAME с данными обновленного Task
 
         Аргументы:
             data(list[dict]): список словарей со всеми ранее
@@ -141,7 +142,7 @@ class Task():
         '''
 
         to_write = self.get_dict()
-        with open('data.csv', 'w', encoding='utf-8', newline='') as file:
+        with open(FILE_NAME, 'w', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
             writer.writeheader()
             for row in data:
@@ -152,12 +153,12 @@ class Task():
 
 def read_all() -> list[dict]:
     '''
-    Считывает данные из файла data.csv в текущей папке.
+    Считывает данные из файла FILE_NAME в текущей папке.
     Возвращает:
        list[dict] со всеми строками из файла
     '''
 
-    with open('data.csv', 'r', encoding='utf-8', newline='') as file:
+    with open(FILE_NAME, 'r', encoding='utf-8', newline='') as file:
         reader = csv.DictReader(file)
         return list(reader)
 
@@ -318,7 +319,7 @@ def search_params(data: list[dict], params: dict) -> list:
 
 def delete_tasks(data: list[dict], params: dict) -> None:
     '''
-    Перезаписывает data.csv без задачи с указанными id или категорией.
+    Перезаписывает FILE_NAME без задачи с указанными id или категорией.
 
     Аргументы:
         data(list[dict]): список со словарями с информацией о всех задачах
@@ -329,7 +330,7 @@ def delete_tasks(data: list[dict], params: dict) -> None:
         category: удаляет все задачи в этой категории
     '''
 
-    with open('data.csv', 'w', encoding='utf-8', newline='') as file:
+    with open(FILE_NAME, 'w', encoding='utf-8', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
         writer.writeheader()
         for row in data:
@@ -346,7 +347,7 @@ def delete_tasks(data: list[dict], params: dict) -> None:
 def update_tasks(id: int, data: list[dict], setcomplete: bool = False) -> None:
     '''Функция для обновления данных о задаче. Получает
     старую задачу с указанным id, формирует новую задачу и
-    записывает ее в data.csv
+    записывает ее в FILE_NAME
 
     Аргументы:
         id(int): id задачи, которую необходимо обновить
@@ -384,7 +385,7 @@ def input_id() -> int:
     Функция для получения корректного значения id
     из пользовательского ввода.
 
-    Возвращаяет:
+    Возвращает:
         id(int): id задачи, с которой необходимо работать.
     '''
 
@@ -402,7 +403,7 @@ def input_id() -> int:
 
 def main():
     if not os.path.isfile('data.csv'):
-        with open('data.csv', 'w', encoding='utf-8', newline='') as file:
+        with open(FILE_NAME, 'w', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, FIELD_NAMES)
             writer.writeheader()
     print('Добро пожаловать в менеджер задач!')
