@@ -5,7 +5,7 @@ from datetime import datetime
 
 from constants import FIELD_NAMES, RU_TO_ENG
 from exceptions import (CategoryError, DateError, DescriptionError,
-                        PrioError, StatusError, TitleError)
+                        PrioError, TitleError)
 
 
 class Task():
@@ -19,10 +19,10 @@ class Task():
         category(str): категория задания
         date(str): дата, к которой нужно выполнить задание
         prio(str): приоритет задания, может быть низким, средним, высоким
-        status(str): статус выполнения задания
+        status(str): статус выполнения задания. По умолчанию: "не выполнено"
 
     Валидация:
-        (title, description, category, status) не могут быть пустыми строками
+        (title, description, category) не могут быть пустыми строками
         prio может принимать значения "низкий", "средний", "высокий"
         date может принимать значения дат в формате DD-MM-YYYY
 
@@ -40,7 +40,7 @@ class Task():
                  category: str,
                  date: str,
                  prio: str,
-                 status: str,
+                 status='не выполнено',
                  ):
         '''
         Атрибуты:
@@ -115,16 +115,6 @@ class Task():
         except ValueError:
             raise DateError('Срок выполнения указан неверно!')
         self._date = date
-
-    @property
-    def status(self):
-        return self._status
-
-    @status.setter
-    def status(self, status):
-        if status == '':
-            raise StatusError('У задания должен быть статус выполнения')
-        self._status = status
 
     def get_dict(self) -> dict:
         '''Формирует словарь на основе экземпляра класса Task.'''
@@ -231,10 +221,6 @@ def validate_task(params: dict) -> Task:
             print(e)
             print('Укажите название категории, к которой относится задача\n')
             params['category'] = input()
-        except StatusError as e:
-            print(e)
-            print('Введите текущий статус выполнения задачи')
-            params['status'] = input()
     return task
 
 
@@ -253,8 +239,7 @@ def create_new_task(id: int) -> list:
         'Дату, к которой её нужно выполнить в формате DD-MM-YYYY '
     )
     prio = input('Приоритет: низкий, средний или высокий ')
-    status = input('Текущий статус выполнения ')
-    data = [id, title, description, category, date, prio, status]
+    data = [id, title, description, category, date, prio,]
     params = {}
     for i in range(0, len(data)):
         params[FIELD_NAMES[i]] = data[i]
@@ -263,7 +248,7 @@ def create_new_task(id: int) -> list:
     print(f'Задача с id {id} создана успешно')
 
 
-def search_id(data: list[dict], id: int, low: int, high: int) -> list:
+def search_id(data: list[dict], id: int) -> list:
     '''
     Осуществляет бинарный поиск по сортированному списку задач
     для поиска задачи с заданным id.
@@ -279,24 +264,23 @@ def search_id(data: list[dict], id: int, low: int, high: int) -> list:
         если задача не найдена
     '''
 
-    result = []
-    if len(data) != 0:
-        if low <= high:
-            mid = (low + high) // 2
-            if int(data[mid].get('id')) == id:
-                result = data[mid]
-            elif int(data[mid].get('id')) < id:
-                result = search_id(data, id, mid + 1, high)
-            else:
-                result = search_id(data, id, low, mid - 1)
-    elif result == []:
-        result = 'Задачи с таким id не существует'
-    else:
-        result = 'Cейчас нет активных задач'
-    return result
+    low = 0
+    high = len(data) - 1
+    mid = 0
+    if len(data) == 0:
+        return 'Задачи с таким id не существует'
+    while high >= low:
+        mid = (high + low) // 2
+        if int(data[mid].get('id')) < id:
+            low = mid + 1
+        elif int(data[mid].get('id')) > id:
+            high = mid - 1
+        else:
+            return data[mid]
+    return 'Задачи с таким id не существует'
 
 
-def search_params(data: list[dict], params: dict):
+def search_params(data: list[dict], params: dict) -> list:
     '''
     Функция для поиска по параметрам.
 
@@ -327,7 +311,7 @@ def search_params(data: list[dict], params: dict):
             result.append(row)
         if 'keyword' in params.keys():
             for item in list(row.values())[1:]:
-                if params.get('keyword') in item and row not in result:
+                if params.get('keyword') in item.lower() and row not in result:
                     result.append(row)
     if result == []:
         result = ['Такой задачи не существует']
@@ -361,7 +345,7 @@ def delete_tasks(data: list[dict], params: dict) -> None:
                 writer.writerow(row)
 
 
-def update_tasks(id: int, data: list[dict], setcomplete: bool = False):
+def update_tasks(id: int, data: list[dict], setcomplete: bool = False) -> None:
     '''Функция для обновления данных о задаче. Получает
     старую задачу с указанным id, формирует новую задачу и
     записывает ее в data.csv
@@ -370,18 +354,18 @@ def update_tasks(id: int, data: list[dict], setcomplete: bool = False):
         id(int): id задачи, которую необходимо обновить
         data(list[dict]): список словарей с данными о всех задачах
         setcomplete(bool, default - False): если передано True,
-            функция обновит статус задачи на "Выполнено!"
+            функция обновит статус задачи на "выполнено"
     '''
 
-    old_task = search_id(data, id, 0, len(data))
+    old_task = search_id(data, id)
     if type(old_task) is str:
         print(old_task)
     else:
         if setcomplete:
-            old_task['status'] = 'Выполнено!'
+            old_task['status'] = 'выполнено'
         else:
             print('Доступные для изменения поля: название, '
-                  'описание, категория, срок, приоритет, статус')
+                  'описание, категория, срок, приоритет')
             print('Введите названия полей, которые',
                   ' вы бы хотели изменить через проблел')
             categories = input().lower().split()
@@ -395,6 +379,27 @@ def update_tasks(id: int, data: list[dict], setcomplete: bool = False):
         new_task.update_csv(data)
         print('Задача успешно обновлена\n',
               f'{search_id(data, id, 0, len(data))}')
+
+
+def input_id() -> int:
+    '''
+    Функция для получения корректного значения id
+    из пользовательского ввода.
+
+    Возвращаяет:
+        id(int): id задачи, с которой необходимо работать.
+    '''
+
+    id = input('Введите id\n')
+    validated = False
+    while validated is False:
+        try:
+            id = int(id)
+            validated = True
+        except ValueError:
+            print('id должно быть целым числом!')
+            id = input('Введите id\n')
+    return id
 
 
 def main():
@@ -424,8 +429,8 @@ def main():
             for item in search_params(data, params):
                 print(item)
         elif todo == 'найти по статусу':
-            status = input('Введите статус\n')
-            params = {'status': status}
+            status = input('Введите статус: выполнено или не выполнено\n')
+            params = {'status': status.lower()}
             for item in search_params(data, params):
                 print(item)
         elif todo == 'найти по ключевым словам':
@@ -434,16 +439,16 @@ def main():
             for item in search_params(data, params):
                 print(item)
         elif todo == 'найти по id':
-            id = int(input('Введите id\n'))
-            print(search_id(data, id, 0, len(data)))
+            id = input_id()
+            print(search_id(data, id))
         elif todo == 'изменить':
-            id = int(input('Введите id\n'))
+            id = input_id()
             update_tasks(id, data)
         elif todo == 'отметить выполнение':
-            id = int(input('Введите id\n'))
+            id = input_id()
             update_tasks(id, data, True)
         elif todo == 'удалить по id':
-            id = int(input('Введите id\n'))
+            id = input_id()
             delete_tasks(data, {'id': id})
         elif todo == 'удалить категорию':
             print('Введите категорию. Все задачи',

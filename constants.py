@@ -18,8 +18,7 @@ RU_TO_ENG = {
     'описание': 'description',
     'категория': 'category',
     'срок': 'date',
-    'приоритет': 'prio',
-    'статус': 'status'
+    'приоритет': 'prio'
 }
 
 ENG_TO_RU = {
