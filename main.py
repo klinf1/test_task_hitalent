@@ -172,30 +172,6 @@ class TaskManager():
             обновляет данные о задаче с id=id
     '''
 
-    def get_id(self, data: list[dict]) -> int:
-        '''
-        Получает новый уникальный id
-
-        Аргументы:
-            data(list[dict]): список словарей всех задач
-
-        Возвращает:
-            id(int): новый уникальный id
-        '''
-
-        if len(data) == 0:
-            new_id = 1
-        else:
-            prev_id = data[-1].get('id')
-            new_id = int(prev_id) + 1
-            existing_ids = []
-            for i in range(0, len(data) - 1):
-                existing_ids.append(data[i].get('id'))
-            if new_id in existing_ids:
-                data = sort_tasks(data)
-                new_id = int(data[-1].get('id')) + 1
-        return new_id
-
     def search_id(self, data: list[dict], id: int) -> dict | str:
         '''
         Метод для поиска задачи с указанным id
@@ -278,17 +254,27 @@ class TaskManager():
             reader = csv.DictReader(file)
             return list(reader)
 
-    def create_new_task(self, data: list[dict]) -> None:
+    def input_new_task_data(self, data: list[dict]):
         '''
-        Получает данные для создания новой задачи от пользователя,
-        создает экземпляр класса Task и добавляет новую задачу в конец
-        data.csv.
+        Метод для формирования списка данных о новой задаче
+        на основании пользовательского ввода
 
         Аргументы:
             data(list[dict]): список словарей всех задач
-        '''
 
-        id = self.get_id(data)
+        Возвращает:
+            список с данными новой задачи
+        '''
+        if len(data) == 0:
+            id = 1
+        else:
+            id = int(data[-1].get('id')) + 1
+            existing_ids = []
+            for i in range(0, len(data) - 1):
+                existing_ids.append(data[i].get('id'))
+            if id in existing_ids:
+                data = sort_tasks(data)
+                id = int(data[-1].get('id')) + 1
         print('Для создания новой задачи укажите следующие данные:')
         title = input('Название ')
         description = input('Краткое описание ')
@@ -298,12 +284,23 @@ class TaskManager():
         )
         prio = input('Приоритет: низкий, средний или высокий ')
         new_data = [id, title, description, category, date, prio,]
+        return new_data
+
+    def create_new_task(self, data: list[dict]) -> None:
+        '''
+        Создает экземпляр класса Task и добавляет новую задачу в конец
+        FILE_NAME.
+
+        Аргументы:
+            data(list[dict]): список словарей всех задач
+        '''
+
+        new_data = self.input_new_task_data(data)
         params = {}
         for i in range(0, len(new_data)):
             params[FIELD_NAMES[i]] = new_data[i]
         task = self.validate_task(params)
         task.write_csv()
-        print(f'Задача с id {id} создана успешно')
 
     def search_params(self, data: list[dict], params: dict) -> list:
         '''
