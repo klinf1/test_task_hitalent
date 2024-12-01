@@ -9,6 +9,56 @@ from exceptions import (CategoryError, DateError, DescriptionError,
 from sorting import sort_tasks
 
 
+class AskUser():
+
+    title = 'Название\n'
+    description = 'Краткое описание\n'
+    category = 'Название категории, к которой она относится \n'
+    date = 'Дату, к которой её нужно выполнить в формате DD-MM-YYYY\n'
+    prio = 'Приоритет: низкий, средний или высокий\n'
+    categories_to_update = ('Введите названия полей, которые',
+                            ' вы бы хотели изменить через проблел')
+    title_update = 'Введите новое название\n'
+    description_update = 'Введите новое описание\n'
+    category_update = 'Введите новую категорию\n'
+    date_update = 'Введите новую дату в формате DD-MM-YYYY\n'
+    prio_update = 'Введите новый приоритет - низкий, средний или высокий\n'
+
+    def get_title(self):
+        return input(self.title)
+
+    def get_description(self):
+        return input(self.description)
+
+    def get_category(self):
+        return input(self.category)
+
+    def get_date(self):
+        return input(self.date)
+
+    def get_prio(self):
+        return input(self.prio)
+
+    def get_categories_to_update(self):
+        print(self.categories_to_update)
+        return input()
+
+    def get_title_update(self):
+        return input(self.title_update)
+
+    def get_description_update(self):
+        return input(self.description_update)
+
+    def get_category_update(self):
+        return input(self.category_update)
+
+    def get_date_update(self):
+        return input(self.date_update)
+
+    def get_prio_update(self):
+        return input(self.prio_update)
+
+
 class Task():
     '''
     Класс для объектов Task
@@ -126,15 +176,15 @@ class Task():
             to_write[attr.replace('_', '')] = value
         return to_write
 
-    def write_csv(self) -> None:
+    def write_csv(self, filename: str) -> None:
         '''Добавляет данные текущего Task в конец файла FILE_NAME'''
 
         to_write = self.get_dict()
-        with open(FILE_NAME, 'a', encoding='utf-8', newline='') as file:
+        with open(filename, 'a', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
             writer.writerow(to_write)
 
-    def update_csv(self, data: list[dict]) -> None:
+    def update_csv(self, data: list[dict], filename: str) -> None:
         '''Перезаписывает файл FILE_NAME с данными обновленного Task
 
         Аргументы:
@@ -143,7 +193,7 @@ class Task():
         '''
 
         to_write = self.get_dict()
-        with open(FILE_NAME, 'w', encoding='utf-8', newline='') as file:
+        with open(filename, 'w', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
             writer.writeheader()
             for row in data:
@@ -242,7 +292,7 @@ class TaskManager():
                 params['category'] = input()
         return task
 
-    def read_all(self) -> list[dict]:
+    def read_all(self, filename: str) -> list[dict]:
         '''
         Считывает данные из файла FILE_NAME в текущей папке.
 
@@ -250,7 +300,7 @@ class TaskManager():
             список словарей всех задач
         '''
 
-        with open(FILE_NAME, 'r', encoding='utf-8', newline='') as file:
+        with open(filename, 'r', encoding='utf-8', newline='') as file:
             reader = csv.DictReader(file)
             return list(reader)
 
@@ -276,17 +326,15 @@ class TaskManager():
                 data = sort_tasks(data)
                 id = int(data[-1].get('id')) + 1
         print('Для создания новой задачи укажите следующие данные:')
-        title = input('Название ')
-        description = input('Краткое описание ')
-        category = input('Название категории, к которой она относится ')
-        date = input(
-            'Дату, к которой её нужно выполнить в формате DD-MM-YYYY '
-        )
-        prio = input('Приоритет: низкий, средний или высокий ')
+        title = AskUser().get_title()
+        description = AskUser().get_description()
+        category = AskUser().get_category()
+        date = AskUser().get_date()
+        prio = AskUser().get_prio()
         new_data = [id, title, description, category, date, prio,]
         return new_data
 
-    def create_new_task(self, data: list[dict]) -> None:
+    def create_new_task(self, data: list[dict], filename: str) -> None:
         '''
         Создает экземпляр класса Task и добавляет новую задачу в конец
         FILE_NAME.
@@ -300,7 +348,7 @@ class TaskManager():
         for i in range(0, len(new_data)):
             params[FIELD_NAMES[i]] = new_data[i]
         task = self.validate_task(params)
-        task.write_csv()
+        task.write_csv(filename)
 
     def search_params(self, data: list[dict], params: dict) -> list:
         '''
@@ -342,7 +390,7 @@ class TaskManager():
             result = ['Такой задачи не существует']
         return result
 
-    def delete_tasks(self, data: list[dict], params: dict) -> None:
+    def delete_tasks(self, data: list[dict], params: dict, filename) -> None:
         '''
         Перезаписывает FILE_NAME без задачи с указанными id или категорией.
 
@@ -355,7 +403,7 @@ class TaskManager():
             category: удаляет все задачи в этой категории
         '''
 
-        with open(FILE_NAME, 'w', encoding='utf-8', newline='') as file:
+        with open(filename, 'w', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, fieldnames=FIELD_NAMES)
             writer.writeheader()
             for row in data:
@@ -372,7 +420,8 @@ class TaskManager():
             self,
             data: list[dict],
             id: int,
-            setcomplete: bool = False
+            filename: str,
+            setcomplete: bool = False,
             ) -> None:
         '''
         Метод для обновления данных о задаче. Получает
@@ -395,17 +444,35 @@ class TaskManager():
             else:
                 print('Доступные для изменения поля: название, '
                       'описание, категория, срок, приоритет')
-                print('Введите названия полей, которые',
-                      ' вы бы хотели изменить через проблел')
-                categories = input().lower().split()
+                categories = AskUser(
+                ).get_categories_to_update().lower().split()
                 for item in categories:
                     if item in RU_TO_ENG.keys():
-                        old_task[RU_TO_ENG[item]] = input(f'Введите {item} ')
+                        if item == 'название':
+                            old_task[RU_TO_ENG[item]] = (
+                                AskUser().get_title_update()
+                            )
+                        if item == 'описание':
+                            old_task[RU_TO_ENG[item]] = (
+                                AskUser().get_description_update()
+                            )
+                        if item == 'категория':
+                            old_task[RU_TO_ENG[item]] = (
+                                AskUser().get_category_update()
+                            )
+                        if item == 'срок':
+                            old_task[RU_TO_ENG[item]] = (
+                                AskUser().get_date_update()
+                            )
+                        if item == 'приоритет':
+                            old_task[RU_TO_ENG[item]] = (
+                                AskUser().get_prio_update()
+                            )
                     else:
                         print(f'Такого поля "{item}" не существует, ',
                               'перехожу к следующему')
             new_task = self.validate_task(old_task)
-            new_task.update_csv(data)
+            new_task.update_csv(data, filename)
             print('Задача успешно обновлена\n',
                   f'{self.search_id(data, id)}')
 
@@ -431,14 +498,18 @@ def input_id() -> int:
     return id
 
 
-def main():
-    if not os.path.isfile('data.csv'):
-        with open(FILE_NAME, 'w', encoding='utf-8', newline='') as file:
+def check_headers(filename):
+    if not os.path.isfile(filename):
+        with open(filename, 'w', encoding='utf-8', newline='') as file:
             writer = csv.DictWriter(file, FIELD_NAMES)
             writer.writeheader()
+
+
+def main():
+    check_headers(FILE_NAME)
     print('Добро пожаловать в менеджер задач!')
     while True:
-        data = TaskManager().read_all()
+        data = TaskManager().read_all(FILE_NAME)
         print('Что бы вы хотели сделать? Доступнные варианты: ',
               'Создать, Просмотреть все, Найти по категории, '
               'Найти по статусу, Найти по ключевым словам, ',
@@ -446,7 +517,7 @@ def main():
               'Удалить по id, Удалить категорию ')
         todo = input().lower()
         if todo == 'создать':
-            TaskManager().create_new_task(data)
+            TaskManager().create_new_task(data, FILE_NAME)
         elif todo == 'просмотреть все':
             if data == []:
                 print('Сейчас нет активных задач')
@@ -472,20 +543,20 @@ def main():
             print(TaskManager().search_id(data, id))
         elif todo == 'изменить':
             id = input_id()
-            TaskManager().update_tasks(data, id)
+            TaskManager().update_tasks(data, id, FILE_NAME)
         elif todo == 'отметить выполнение':
             id = input_id()
-            TaskManager().update_tasks(data, id, True)
+            TaskManager().update_tasks(data, id, FILE_NAME, True)
         elif todo == 'удалить по id':
             params = {}
             params['id'] = input_id()
-            TaskManager().delete_tasks(data, params)
+            TaskManager().delete_tasks(data, params, FILE_NAME)
         elif todo == 'удалить категорию':
             print('Введите категорию. Все задачи',
                   ' из этой категории будут удалены')
             params = {}
             params['category'] = input()
-            TaskManager().delete_tasks(data, params)
+            TaskManager().delete_tasks(data, params, FILE_NAME)
         else:
             print('К сожалению, менеджер не может понять эту комманду')
 
