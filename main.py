@@ -480,10 +480,11 @@ def get_id(data: list[dict]) -> int:
     else:
         id = int(data[-1].get('id')) + 1
         existing_ids = []
-        for i in range(0, len(data) - 1):
-            existing_ids.append(data[i].get('id'))
+        for i in range(0, (len(data))):
+            existing_ids.append(int(data[i].get('id')))
         if id in existing_ids:
             data = sort_tasks(data)
+            print(f'отсоритрованные данные {data}')
         id = int(data[-1].get('id')) + 1
     return id
 
