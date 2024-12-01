@@ -1,6 +1,4 @@
-import builtins
 import csv
-from unittest import mock
 
 import pytest
 
@@ -37,39 +35,20 @@ def test_headers(get_file):
 
 
 def test_create_new_correct_task(get_file):
-    with mock.patch.object(
-        builtins, 'input', lambda _: TEST_DATA[0].get('title')
-    ):
-        mocked_title = main.AskUser().get_title()
-    with mock.patch.object(
-        builtins, 'input', lambda _: TEST_DATA[0].get('description')
-    ):
-        mocked_desc = main.AskUser().get_description()
-    with mock.patch.object(
-        builtins, 'input', lambda _: TEST_DATA[0].get('category')
-    ):
-        mocked_cat = main.AskUser().get_category()
-    with mock.patch.object(
-        builtins, 'input', lambda _: TEST_DATA[0].get('date')
-    ):
-        mocked_date = main.AskUser().get_date()
-    with mock.patch.object(
-        builtins, 'input', lambda _: TEST_DATA[0].get('prio')
-    ):
-        mocked_prio = main.AskUser().get_prio()
-    test_task_data = [
-        1, mocked_title, mocked_desc, mocked_cat, mocked_date, mocked_prio
+    test_data = [
+        '1', 'test_title', 'test_desc', 'test_cat', '02-12-2024', 'высокий'
     ]
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
         writer = csv.DictWriter(file, FIELD_NAMES)
         writer.writeheader()
-    main.TaskManager().create_new_task(test_task_data, get_file)
+    main.TaskManager().create_new_task(test_data, get_file)
     with open(get_file, 'r', encoding='utf-8', newline='') as f:
         reader = list(csv.DictReader(f))
     assert len(reader) == 1, ('Проверьте, что при создании',
                               ' задачи она записывается в файл')
-    assert reader[0] == TEST_DATA[0], ('Проверьте, что при записи ',
-                                       'задачи она записывается корректно')
+    test_data.append('не выполнено')
+    error_msg = 'Проверьте, что при записи задачи она записывается корректно'
+    assert list(reader[0].values()) == test_data, error_msg
 
 
 def test_adding_wrong_date(get_file, capsys):
@@ -82,9 +61,9 @@ def test_adding_wrong_date(get_file, capsys):
     try:
         main.TaskManager().create_new_task(test_data, get_file)
     except Exception:
-        assert capsys.readouterr(), ('Проверьте, что при вводе неверной даты',
-                                     ' пользователю предлагается',
-                                     ' ввести дату снова')
+        error_msg = ('Проверьте, что при вводе неверной даты',
+                     ' пользователю предлагается ввести ее снова')
+        assert capsys.readouterr(), error_msg
     with open(get_file, 'r', encoding='utf-8', newline='') as f:
         reader = list(csv.DictReader(f))
     assert len(reader) == 0, ('Проверьте, что задачи с',
@@ -101,9 +80,9 @@ def test_adding_wrong_prio(get_file, capsys):
     try:
         main.TaskManager().create_new_task(test_data, get_file)
     except Exception:
-        assert capsys.readouterr(), ('Проверьте, что при вводе неверного ',
-                                     'приоритета пользователю предлагается',
-                                     ' ввести его снова')
+        error_msg = ('Проверьте, что при вводе неверного приоритета',
+                     ' пользователю предлагается ввести его снова')
+        assert capsys.readouterr(), error_msg
     with open(get_file, 'r', encoding='utf-8', newline='') as f:
         reader = list(csv.DictReader(f))
     assert len(reader) == 0, ('Проверьте, что задачи с',
@@ -151,4 +130,67 @@ def test_sorting():
     is_sorted = all(
         id_list[i] <= id_list[i + 1] for i in range(len(id_list) - 1)
     )
-    assert is_sorted is True, 'Проверьте, что сортировка работает правильно'
+    assert is_sorted, 'Проверьте, что сортировка работает правильно'
+
+
+def test_empty(get_file, capsys):
+    with open(get_file, 'w', encoding='utf-8', newline='') as file:
+        writer = csv.DictWriter(file, FIELD_NAMES)
+        writer.writeheader()
+    empty_title = [
+        1, '', 'test_desc', 'test_cat', '02-12-2024', 'высокий'
+    ]
+    try:
+        main.TaskManager().create_new_task(empty_title, get_file)
+    except Exception:
+        error_msg = ('Проверьте, что если название не введено,',
+                     ' пользователю предлагается ввести его снова')
+        assert capsys.readouterr(), error_msg
+    with open(get_file, 'r', encoding='utf-8', newline='') as f:
+        reader = list(csv.DictReader(f))
+    assert len(reader) == 0, ('Проверьте, что задачи без',
+                              ' названия не записываются')
+    empty_desc = [
+        1, 'test_title', '', 'test_cat', '02-12-2024', 'высокий'
+    ]
+    try:
+        main.TaskManager().create_new_task(empty_desc, get_file)
+    except Exception:
+        error_msg = ('Проверьте, что если описание не введено,',
+                     ' пользователю предлагается ввести его снова')
+        assert capsys.readouterr(), error_msg
+    with open(get_file, 'r', encoding='utf-8', newline='') as f:
+        reader = list(csv.DictReader(f))
+    assert len(reader) == 0, ('Проверьте, что задачи без',
+                              ' описания не записываются')
+    empty_cat = [
+        1, 'test_title', 'test_desc', '', '02-12-2024', 'выскоий'
+    ]
+    try:
+        main.TaskManager().create_new_task(empty_cat, get_file)
+    except Exception:
+        error_msg = ('Проверьте, что если категория не введена,',
+                     ' пользователю предлагается ввести ее снова')
+        assert capsys.readouterr(), error_msg
+    with open(get_file, 'r', encoding='utf-8', newline='') as f:
+        reader = list(csv.DictReader(f))
+    assert len(reader) == 0, ('Проверьте, что задачи',
+                              ' без категории не записываются')
+
+
+def test_create_multiple_tasks(get_file):
+    test_data = [
+        ['1', 'test_title1', 'test_desc', 'test_cat', '02-12-2024', 'высокий'],
+        ['2', 'test_title2', 'test_desc', 'test_cat', '02-12-2024', 'средний'],
+        ['3', 'test_title3', 'test_desc', 'test_cat', '02-12-2024', 'низкий'],
+    ]
+    with open(get_file, 'w', encoding='utf-8', newline='') as file:
+        writer = csv.DictWriter(file, FIELD_NAMES)
+        writer.writeheader()
+    for item in test_data:
+        main.TaskManager().create_new_task(item, get_file)
+    with open(get_file, 'r', encoding='utf-8', newline='') as f:
+        reader = list(csv.DictReader(f))
+    error_msg = ('Проверьте, что при наличии задач',
+                 ' в файле новые записываются успешно')
+    assert len(reader) == len(test_data), error_msg
