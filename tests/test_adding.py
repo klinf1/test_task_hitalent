@@ -1,7 +1,5 @@
 import csv
 
-import pytest
-
 from .. import main, sorting
 from ..constants import FIELD_NAMES
 
@@ -17,12 +15,6 @@ TEST_DATA = [
         'status': 'не выполнено'
     }
 ]
-
-
-@pytest.fixture(scope='session')
-def get_file(tmpdir_factory):
-    filename = str(tmpdir_factory.mktemp('data').join('data.csv'))
-    return filename
 
 
 def test_headers(get_file):
