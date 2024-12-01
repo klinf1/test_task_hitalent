@@ -543,12 +543,24 @@ def main():
                 TaskManager().update_tasks(data, task, FILE_NAME)
         elif todo == 'удалить по id':
             params = {'id': AskUser().input_id()}
-            TaskManager().delete_tasks(data, params, FILE_NAME)
+            existing_ids = []
+            for item in data:
+                existing_ids.append(item.get('id'))
+            if params.get('id') in existing_ids:
+                TaskManager().delete_tasks(data, params, FILE_NAME)
+            else:
+                print('Задач с такой категорией нет')
         elif todo == 'удалить категорию':
             print('Введите категорию. Все задачи',
                   ' из этой категории будут удалены')
             params = {'category': input()}
-            TaskManager().delete_tasks(data, params, FILE_NAME)
+            existing_categories = []
+            for item in data:
+                existing_categories.append(item.get('category'))
+            if params.get('category') in existing_categories:
+                TaskManager().delete_tasks(data, params, FILE_NAME)
+            else:
+                print('Задач с такой категорией нет')
         else:
             print('К сожалению, менеджер не может понять эту комманду')
 
