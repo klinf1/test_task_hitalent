@@ -36,6 +36,7 @@ def test_create_new_correct_task(get_file):
     main.TaskManager().create_new_task(test_data, get_file)
     with open(get_file, 'r', encoding='utf-8', newline='') as f:
         reader = list(csv.DictReader(f))
+        print(reader)
     assert len(reader) == 1, ('Проверьте, что при создании',
                               ' задачи она записывается в файл')
     test_data.append('не выполнено')

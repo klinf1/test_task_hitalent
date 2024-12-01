@@ -79,7 +79,7 @@ class AskUser():
                       'перехожу к следующему')
         return params
 
-    def input_id() -> int:
+    def input_id(self) -> int:
         '''
         Функция для получения корректного значения id
         из пользовательского ввода.
@@ -443,7 +443,6 @@ class TaskManager():
             setcomplete(bool, default - False): если передано True,
                 метод обновит статус задачи на "выполнено"
         '''
-
         new_task = self.validate_task(params)
         new_task.update_csv(data, filename)
         print('Задача успешно обновлена')
