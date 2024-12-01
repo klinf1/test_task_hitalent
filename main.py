@@ -3,10 +3,10 @@ import os
 
 from datetime import datetime
 
-from constants import FIELD_NAMES, RU_TO_ENG, FILE_NAME
-from exceptions import (CategoryError, DateError, DescriptionError,
-                        PrioError, TitleError)
-from sorting import sort_tasks
+from .constants import FIELD_NAMES, RU_TO_ENG, FILE_NAME
+from .exceptions import (CategoryError, DateError, DescriptionError,
+                         PrioError, TitleError)
+from .sorting import sort_tasks
 
 
 class AskUser():
@@ -304,37 +304,7 @@ class TaskManager():
             reader = csv.DictReader(file)
             return list(reader)
 
-    def input_new_task_data(self, data: list[dict]):
-        '''
-        Метод для формирования списка данных о новой задаче
-        на основании пользовательского ввода
-
-        Аргументы:
-            data(list[dict]): список словарей всех задач
-
-        Возвращает:
-            список с данными новой задачи
-        '''
-        if len(data) == 0:
-            id = 1
-        else:
-            id = int(data[-1].get('id')) + 1
-            existing_ids = []
-            for i in range(0, len(data) - 1):
-                existing_ids.append(data[i].get('id'))
-            if id in existing_ids:
-                data = sort_tasks(data)
-                id = int(data[-1].get('id')) + 1
-        print('Для создания новой задачи укажите следующие данные:')
-        title = AskUser().get_title()
-        description = AskUser().get_description()
-        category = AskUser().get_category()
-        date = AskUser().get_date()
-        prio = AskUser().get_prio()
-        new_data = [id, title, description, category, date, prio,]
-        return new_data
-
-    def create_new_task(self, data: list[dict], filename: str) -> None:
+    def create_new_task(self, new_task_data: list, filename: str) -> None:
         '''
         Создает экземпляр класса Task и добавляет новую задачу в конец
         FILE_NAME.
@@ -343,10 +313,9 @@ class TaskManager():
             data(list[dict]): список словарей всех задач
         '''
 
-        new_data = self.input_new_task_data(data)
         params = {}
-        for i in range(0, len(new_data)):
-            params[FIELD_NAMES[i]] = new_data[i]
+        for i in range(0, len(new_task_data)):
+            params[FIELD_NAMES[i]] = new_task_data[i]
         task = self.validate_task(params)
         task.write_csv(filename)
 
@@ -505,6 +474,20 @@ def check_headers(filename):
             writer.writeheader()
 
 
+def get_id(data: list[dict]) -> int:
+    if len(data) == 0:
+        id = 1
+    else:
+        id = int(data[-1].get('id')) + 1
+        existing_ids = []
+        for i in range(0, len(data) - 1):
+            existing_ids.append(data[i].get('id'))
+        if id in existing_ids:
+            data = sort_tasks(data)
+        id = int(data[-1].get('id')) + 1
+    return id
+
+
 def main():
     check_headers(FILE_NAME)
     print('Добро пожаловать в менеджер задач!')
@@ -517,7 +500,15 @@ def main():
               'Удалить по id, Удалить категорию ')
         todo = input().lower()
         if todo == 'создать':
-            TaskManager().create_new_task(data, FILE_NAME)
+            id = get_id(data)
+            print('Для создания новой задачи укажите следующие данные:')
+            title = AskUser().get_title()
+            description = AskUser().get_description()
+            category = AskUser().get_category()
+            date = AskUser().get_date()
+            prio = AskUser().get_prio()
+            new_task_data = [id, title, description, category, date, prio,]
+            TaskManager().create_new_task(new_task_data, FILE_NAME)
         elif todo == 'просмотреть все':
             if data == []:
                 print('Сейчас нет активных задач')
