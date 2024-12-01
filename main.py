@@ -3,10 +3,10 @@ import os
 
 from datetime import datetime
 
-from .constants import FIELD_NAMES, RU_TO_ENG, FILE_NAME
-from .exceptions import (CategoryError, DateError, DescriptionError,
-                         PrioError, TitleError)
-from .sorting import sort_tasks
+from constants import FIELD_NAMES, RU_TO_ENG, FILE_NAME
+from exceptions import (CategoryError, DateError, DescriptionError,
+                        PrioError, TitleError)
+from sorting import sort_tasks
 
 
 class AskUser():
@@ -57,6 +57,47 @@ class AskUser():
 
     def get_prio_update(self):
         return input(self.prio_update)
+
+    def input_edited_task(self):
+        params = {}
+        categories = AskUser().get_categories_to_update().lower().split()
+        for item in categories:
+            if item in RU_TO_ENG.keys():
+                if item == 'название':
+                    params[RU_TO_ENG[item]] = AskUser().get_title_update()
+                if item == 'описание':
+                    params[RU_TO_ENG[item]] = AskUser(
+                        ).get_description_update()
+                if item == 'категория':
+                    params[RU_TO_ENG[item]] = AskUser().get_category_update()
+                if item == 'срок':
+                    params[RU_TO_ENG[item]] = AskUser().get_date_update()
+                if item == 'приоритет':
+                    params[RU_TO_ENG[item]] = AskUser().get_prio_update()
+            else:
+                print(f'Такого поля "{item}" не существует, ',
+                      'перехожу к следующему')
+        return params
+
+    def input_id() -> int:
+        '''
+        Функция для получения корректного значения id
+        из пользовательского ввода.
+
+        Возвращает:
+            id(int): id задачи, с которой необходимо работать.
+        '''
+
+        id = input('Введите id\n')
+        validated = False
+        while validated is False:
+            try:
+                id = int(id)
+                validated = True
+            except ValueError:
+                print('id должно быть целым числом!')
+                id = input('Введите id\n')
+        return id
 
 
 class Task():
@@ -314,12 +355,12 @@ class TaskManager():
         '''
 
         params = {}
-        for i in range(0, len(new_task_data)):
+        for i in range(len(new_task_data)):
             params[FIELD_NAMES[i]] = new_task_data[i]
         task = self.validate_task(params)
         task.write_csv(filename)
 
-    def search_params(self, data: list[dict], params: dict) -> list:
+    def search_params(self, data: list[dict], params: dict) -> list[dict]:
         '''
         Метод для поиска по параметрам.
 
@@ -387,10 +428,9 @@ class TaskManager():
 
     def update_tasks(
             self,
-            data: list[dict],
-            id: int,
-            filename: str,
-            setcomplete: bool = False,
+            data,
+            params,
+            filename,
             ) -> None:
         '''
         Метод для обновления данных о задаче. Получает
@@ -404,67 +444,15 @@ class TaskManager():
                 метод обновит статус задачи на "выполнено"
         '''
 
-        old_task = self.search_id(data, id)
-        if type(old_task) is str:
-            print(old_task)
-        else:
-            if setcomplete:
-                old_task['status'] = 'выполнено'
-            else:
-                print('Доступные для изменения поля: название, '
-                      'описание, категория, срок, приоритет')
-                categories = AskUser(
-                ).get_categories_to_update().lower().split()
-                for item in categories:
-                    if item in RU_TO_ENG.keys():
-                        if item == 'название':
-                            old_task[RU_TO_ENG[item]] = (
-                                AskUser().get_title_update()
-                            )
-                        if item == 'описание':
-                            old_task[RU_TO_ENG[item]] = (
-                                AskUser().get_description_update()
-                            )
-                        if item == 'категория':
-                            old_task[RU_TO_ENG[item]] = (
-                                AskUser().get_category_update()
-                            )
-                        if item == 'срок':
-                            old_task[RU_TO_ENG[item]] = (
-                                AskUser().get_date_update()
-                            )
-                        if item == 'приоритет':
-                            old_task[RU_TO_ENG[item]] = (
-                                AskUser().get_prio_update()
-                            )
-                    else:
-                        print(f'Такого поля "{item}" не существует, ',
-                              'перехожу к следующему')
-            new_task = self.validate_task(old_task)
-            new_task.update_csv(data, filename)
-            print('Задача успешно обновлена\n',
-                  f'{self.search_id(data, id)}')
+        new_task = self.validate_task(params)
+        new_task.update_csv(data, filename)
+        print('Задача успешно обновлена')
 
-
-def input_id() -> int:
-    '''
-    Функция для получения корректного значения id
-    из пользовательского ввода.
-
-    Возвращает:
-        id(int): id задачи, с которой необходимо работать.
-    '''
-
-    id = input('Введите id\n')
-    validated = False
-    while validated is False:
-        try:
-            id = int(id)
-            validated = True
-        except ValueError:
-            print('id должно быть целым числом!')
-            id = input('Введите id\n')
-    return id
+    def get_updated_task(self, task: dict, params: dict) -> dict:
+        for key in task.keys():
+            if key in params.keys():
+                task[key] = params.get(key)
+        return task
 
 
 def check_headers(filename):
@@ -531,17 +519,29 @@ def main():
             for item in TaskManager().search_params(data, params):
                 print(item)
         elif todo == 'найти по id':
-            id = input_id()
+            id = AskUser().input_id()
             print(TaskManager().search_id(data, id))
         elif todo == 'изменить':
-            id = input_id()
-            TaskManager().update_tasks(data, id, FILE_NAME)
+            id = AskUser().input_id()
+            task = TaskManager().search_id(data, id)
+            if type(task) is str:
+                print(task)
+            else:
+                print('Доступные для изменения поля: название, '
+                      'описание, категория, срок, приоритет')
+                params = AskUser().input_edited_task()
+                task = TaskManager().get_updated_task(task, params)
+                TaskManager().update_tasks(data, task, FILE_NAME)
         elif todo == 'отметить выполнение':
-            id = input_id()
-            TaskManager().update_tasks(data, id, FILE_NAME, True)
+            id = AskUser().input_id()
+            task = TaskManager().search_id(data, id)
+            if type(task) is str:
+                print(task)
+            task['status'] = 'выполнено'
+            TaskManager().update_tasks(data, task, FILE_NAME)
         elif todo == 'удалить по id':
             params = {}
-            params['id'] = input_id()
+            params['id'] = AskUser().input_id()
             TaskManager().delete_tasks(data, params, FILE_NAME)
         elif todo == 'удалить категорию':
             print('Введите категорию. Все задачи',
