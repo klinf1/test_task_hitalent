@@ -449,6 +449,7 @@ class TaskManager():
         print('Задача успешно обновлена')
 
     def get_updated_task(self, task: dict, params: dict) -> dict:
+
         for key in task.keys():
             if key in params.keys():
                 task[key] = params.get(key)
@@ -537,17 +538,17 @@ def main():
             task = TaskManager().search_id(data, id)
             if type(task) is str:
                 print(task)
-            task['status'] = 'выполнено'
-            TaskManager().update_tasks(data, task, FILE_NAME)
+            else:
+                params = {'status': 'выполнено'}
+                task = TaskManager().get_updated_task(task, params)
+                TaskManager().update_tasks(data, task, FILE_NAME)
         elif todo == 'удалить по id':
-            params = {}
-            params['id'] = AskUser().input_id()
+            params = {'id': AskUser().input_id()}
             TaskManager().delete_tasks(data, params, FILE_NAME)
         elif todo == 'удалить категорию':
             print('Введите категорию. Все задачи',
                   ' из этой категории будут удалены')
-            params = {}
-            params['category'] = input()
+            params = {'category': input()}
             TaskManager().delete_tasks(data, params, FILE_NAME)
         else:
             print('К сожалению, менеджер не может понять эту комманду')
