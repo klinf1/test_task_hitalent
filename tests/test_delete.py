@@ -1,7 +1,7 @@
 import csv
 
 from .. import main
-from .. import constants
+from .. import settings
 
 
 def test_delete_id(get_file):
@@ -26,7 +26,7 @@ def test_delete_id(get_file):
         }
     ]
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, constants.FIELD_NAMES)
+        writer = csv.DictWriter(file, settings.FIELD_NAMES)
         writer.writeheader()
         for row in old_data:
             writer.writerow(row)
@@ -63,7 +63,7 @@ def test_delete_empty_id(get_file):
         }
     ]
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, constants.FIELD_NAMES)
+        writer = csv.DictWriter(file, settings.FIELD_NAMES)
         writer.writeheader()
         for row in old_data:
             writer.writerow(row)
@@ -107,7 +107,7 @@ def test_delete_cat(get_file):
         }
     ]
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, constants.FIELD_NAMES)
+        writer = csv.DictWriter(file, settings.FIELD_NAMES)
         writer.writeheader()
         for row in old_data:
             writer.writerow(row)
@@ -144,7 +144,7 @@ def test_delete_empty_cat(get_file):
         }
     ]
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, constants.FIELD_NAMES)
+        writer = csv.DictWriter(file, settings.FIELD_NAMES)
         writer.writeheader()
         for row in old_data:
             writer.writerow(row)

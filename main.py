@@ -3,9 +3,9 @@ import os
 
 from datetime import datetime
 
-from constants import FIELD_NAMES, RU_TO_ENG, FILE_NAME
+from settings import FIELD_NAMES, RU_TO_ENG, FILE_NAME
 from exceptions import (CategoryError, DateError, DescriptionError,
-                        PrioError, TitleError)
+                        PrioError, TitleError, FileError)
 from sorting import sort_tasks
 
 
@@ -356,35 +356,30 @@ class Task():
 
 class TaskManager():
     '''
-    Класс для чтения, удаления, и изменения данный в FILENAME
+    Класс для чтения, удаления, и изменения данных в файле.
 
     Методы:
-        get_id(data: list[dict]): получает новый уникальный номер id(int)
-        search_id(data: list[dict], id(int)): находит задачу с указанным id
-        validate_task(params[dict]): проверяет правильность
-            введенных пользователем данных
-        read_all(): считывает все данные из FILENAME
-        create_new_task(data: list[dict]): получает данные для создания
-            новой задачи
-        search_params(data: list[dict], params: dict): осуществляет поиск по
-            параметрам по всем задачам
-        delete_tasks(data: list[dict], params: dict): Перезаписывает FILE_NAME
-            без задачи с указанными id или категорией.
-        update_tasks(data: list[dict], id: int, setcomplete: bool = False):
-            обновляет данные о задаче с id=id
+        get_id
+        search_id
+        validate_task
+        read_all
+        create_new_task
+        search_params
+        delete_tasks
+        update_tasks.
     '''
 
     def search_id(self, data: list[dict], id: int) -> dict | str:
         '''
-        Метод для поиска задачи с указанным id
+        Метод для поиска задачи с указанным id.
 
         Аргументы:
-            data(list[dict]): список словарей всех задач
-            id(int): id задачи, которую необходимо найти
+            data: список словарей всех задач.
+            id: id задачи, которую необходимо найти.
 
         Возвращает:
             словарь с данными искомой задачи или строку с
-            данными об ошибке
+            данными об ошибке.
         '''
 
         low = 0
@@ -404,14 +399,15 @@ class TaskManager():
 
     def validate_task(self, params: dict) -> Task:
         '''
-        Метод для проверки введенных пользователем данных
+        Метод для проверки правильности введенных пользователем данных
         перед записью новой задачи.
+
         Если данные были введены неверно, изменяет словарь params,
-        получая данные от пользователя.
+        получая новые данные от пользователя.
 
         Аргументы:
-            params(dict): словарь, ключи которого - названия полей,
-                а значения - данные о новой задаче.
+            params: словарь, ключи которого - названия полей,
+            а значения - данные о новой задаче.
 
         Возвращает:
             Экземпляр класса Task с подтвержденными данными.
@@ -446,10 +442,14 @@ class TaskManager():
 
     def read_all(self, filename: str) -> list[dict]:
         '''
-        Считывает данные из файла FILE_NAME в текущей папке.
+        Считывает данные из указанного файла.
+
+        Аргументы:
+            filename: путь к файлу с данными.
 
         Возвращает:
-            список словарей всех задач
+            Все данные из файла в виде списка со словарями, в которых
+            ключи - названия полей, а значения - данные строки.
         '''
 
         with open(filename, 'r', encoding='utf-8', newline='') as file:
@@ -458,11 +458,16 @@ class TaskManager():
 
     def create_new_task(self, new_task_data: list, filename: str) -> None:
         '''
-        Создает экземпляр класса Task и добавляет новую задачу в конец
-        FILE_NAME.
+        Проверяет правильность данных и вызывает Task.write_csv.
+
+        Перед записью вызывает TaskManager.validate_tasks для проверки
+        правильности ввода и получения экземпляра Task на основе
+        переданных данных.
 
         Аргументы:
-            data(list[dict]): список словарей всех задач
+            new_task_data: данные новой задачи.
+            filename: строка с путем к файлу, в который нужно
+            записать данные.
         '''
 
         params = {}
@@ -473,16 +478,16 @@ class TaskManager():
 
     def search_params(self, data: list[dict], params: dict) -> list[dict]:
         '''
-        Метод для поиска по параметрам.
+        Метод для поиска задачи по параметрам.
+
+        Поле для поиска передается в params.
+        Может осуществлять поиск по категории (ключ словаря 'category'),
+        статусу (ключ словаря 'status') и ключевым
+        словам (ключ словаря 'keyword').
 
         Аргументы:
-            data(list[dict]): список словарей всех задач
+            data: список словарей всех задач
             params(dict): словарь, содержащий возможные варианты поиска
-
-        Возможности поиска:
-            По категории: ключ словаря 'category'
-            По статусу выполнения: ключ словаря 'status'
-            По ключевым словам: ключ словаря 'keyword'
 
         Возвращает:
             cписок задач, соответствующих поисковому запросу,
@@ -511,17 +516,24 @@ class TaskManager():
             result = ['Такой задачи не существует']
         return result
 
-    def delete_tasks(self, data: list[dict], params: dict, filename) -> None:
+    def delete_tasks(
+            self,
+            data: list[dict],
+            params: dict,
+            filename: str
+            ) -> None:
         '''
-        Перезаписывает FILE_NAME без задачи с указанными id или категорией.
+        Перезаписывает файл с данными без задачи с указанными параметрами.
+
+        Поддерживает удаление по id, если в параметрах 'id' = <id задачи,
+        которую необходимо удалить>, и по категории, если в параметрах
+        'category' = <категория, задачи из которой необходимо удалить>.
 
         Аргументы:
-            data(list[dict]): список словарей всех задач
-            params(dict): словарь, содержащий инструкции по удалению
-
-        Параметры:
-            id: удаляет задачу с указанным id
-            category: удаляет все задачи в этой категории
+            data: список словарей всех задач.
+            params: словарь, содержащий инструкции по удалению.
+            filename: строка с путем к файлу, в который нужно
+            записать данные.
         '''
 
         with open(filename, 'w', encoding='utf-8', newline='') as file:
@@ -539,26 +551,39 @@ class TaskManager():
 
     def update_tasks(
             self,
-            data,
-            params,
-            filename,
+            data: list[dict],
+            params: dict,
+            filename: str,
             ) -> None:
         '''
-        Метод для обновления данных о задаче. Получает
-        старую задачу с указанным id, формирует новую задачу и
-        записывает ее в FILE_NAME
+        Проверяет правильность данных и вызывает Task.update_csv.
+
+        Перед записью вызывает TaskManager.validate_tasks для проверки
+        правильности ввода и получения экземпляра Task на основе
+        переданных данных.
 
         Аргументы:
-            id(int): id задачи, которую необходимо обновить
-            data(list[dict]): список словарей всех задач
-            setcomplete(bool, default - False): если передано True,
-                метод обновит статус задачи на "выполнено"
+            data: список словарей всех задач
+            params: обновленные данные задачи
+            filename: строка с путем к файлу, в который нужно
+            записать данные.
         '''
         new_task = self.validate_task(params)
         new_task.update_csv(data, filename)
         print('Задача успешно обновлена')
 
     def get_updated_task(self, task: dict, params: dict) -> dict:
+        '''
+        Метод для изменения данных в словаре задачи.
+
+        Аргументы:
+            task: словарь с данными задачи.
+            params: словарь, в котором ключи - названия полей,
+            значения которых необходимо изменить.
+
+        Возвращает:
+            словарь с обновленными данными задачи.
+        '''
 
         for key in task.keys():
             if key in params.keys():
@@ -566,14 +591,45 @@ class TaskManager():
         return task
 
 
-def check_headers(filename):
-    if not os.path.isfile(filename):
+def check_file(filename: str) -> None:
+    '''
+    Создает и проверяет файл с данными, указанный в настройках.
+
+    Атрибуты:
+        filename: путь к файлу
+
+    Вызывает:
+        FileError: если указанный в файл не является
+        .csv файлом
+    '''
+
+    if not os.path.isfile():
         with open(filename, 'w', encoding='utf-8', newline='') as file:
-            writer = csv.DictWriter(file, FIELD_NAMES)
-            writer.writeheader()
+            if os.path.splitext(filename)[1] == '.csv':
+                writer = csv.DictWriter(file, FIELD_NAMES)
+                writer.writeheader()
+            else:
+                error_msg = ('Указанный в настройках файл,'
+                             ' не является .csv файлом!')
+                raise FileError(''.join(i for i in error_msg))
 
 
 def get_id(data: list[dict]) -> int:
+    '''
+    Получает id для новой задачи.
+
+    Полученное id на 1 больше id последней записанной задачи.
+    Если задача с таким id уже существует или новое полученное id
+    не является наибольшим, то сортирует файл с данными
+    по возрастанию id, и получает новое id на 1 больше наибольшего.
+
+    Аргументы:
+        data: список словарей всех задач
+
+    Возвращает:
+        id: число на 1 больше наибольшего id из задач, переданных
+        в data
+    '''
     if len(data) == 0:
         id = 1
     else:
@@ -581,7 +637,7 @@ def get_id(data: list[dict]) -> int:
         existing_ids = []
         for i in range(0, (len(data))):
             existing_ids.append(int(data[i].get('id')))
-        if id in existing_ids:
+        if id <= max(existing_ids):
             data = sort_tasks(data)
             print(f'отсоритрованные данные {data}')
         id = int(data[-1].get('id')) + 1
@@ -589,7 +645,7 @@ def get_id(data: list[dict]) -> int:
 
 
 def main():
-    check_headers(FILE_NAME)
+    check_file(FILE_NAME)
     print('Добро пожаловать в менеджер задач!')
     while True:
         data = TaskManager().read_all(FILE_NAME)

@@ -1,7 +1,7 @@
 import csv
 
 from .. import main
-from ..constants import FIELD_NAMES
+from ..settings import FIELD_NAMES
 
 
 def test_get_updated_task():

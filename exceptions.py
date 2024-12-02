@@ -26,3 +26,8 @@ class DescriptionError(ValueError):
 class StatusError(ValueError):
 
     pass
+
+
+class FileError(Exception):
+
+    pass

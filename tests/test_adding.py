@@ -1,7 +1,7 @@
 import csv
 
 from .. import main, sorting
-from ..constants import FIELD_NAMES
+from ..settings import FIELD_NAMES
 
 
 TEST_DATA = [
