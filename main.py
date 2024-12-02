@@ -10,6 +10,22 @@ from sorting import sort_tasks
 
 
 class AskUser():
+    '''
+    Класс, работающий с пользовательским вводом.
+
+    Методы:
+        get_title
+        get_description
+        get_category
+        get_date
+        get_prio
+        get_categories_to_update
+        get_title_update
+        get_description_update
+        get_category_update
+        get_date_update
+        get_prio_update.
+    '''
 
     title = 'Название\n'
     description = 'Краткое описание\n'
@@ -24,56 +40,96 @@ class AskUser():
     date_update = 'Введите новую дату в формате DD-MM-YYYY\n'
     prio_update = 'Введите новый приоритет - низкий, средний или высокий\n'
 
-    def get_title(self):
+    def get_title(self) -> str:
+        '''Выводит запрос на ввод названия и возвращает введенную строку.'''
         return input(self.title)
 
-    def get_description(self):
+    def get_description(self) -> str:
+        '''Выводит запрос на ввод описания и возвращает введенную строку.'''
         return input(self.description)
 
-    def get_category(self):
+    def get_category(self) -> str:
+        '''Выводит запрос на ввод категории и возвращает введенную строку.'''
         return input(self.category)
 
-    def get_date(self):
+    def get_date(self) -> str:
+        '''Выводит запрос на ввод даты и возвращает введенную строку.'''
         return input(self.date)
 
-    def get_prio(self):
+    def get_prio(self) -> str:
+        '''Выводит запрос на ввод приоритета и возвращает введенную строку.'''
         return input(self.prio)
 
-    def get_categories_to_update(self):
+    def get_categories_to_update(self) -> str:
+        '''Выводит запрос на ввод категорий для обновления и
+        возвращает введенную строку.
+        '''
+
         print(''.join(i for i in self.categories_to_update))
         return input()
 
-    def get_title_update(self):
+    def get_title_update(self) -> str:
+        '''Выводит запрос на ввод обновленного названия и
+        возвращает введенную строку.
+        '''
+
         return input(self.title_update)
 
-    def get_description_update(self):
+    def get_description_update(self) -> str:
+        '''Выводит запрос на ввод обновленного описания и
+        возвращает введенную строку.
+        '''
+
         return input(self.description_update)
 
-    def get_category_update(self):
+    def get_category_update(self) -> str:
+        '''Выводит запрос на ввод обновленной категории и
+        возвращает введенную строку.
+        '''
+
         return input(self.category_update)
 
-    def get_date_update(self):
+    def get_date_update(self) -> str:
+        '''Выводит запрос на ввод обновленной даты и
+        возвращает введенную строку.
+        '''
+
         return input(self.date_update)
 
-    def get_prio_update(self):
+    def get_prio_update(self) -> str:
+        '''Выводит запрос на ввод обновленного приоритета и
+        возвращает введенную строку.
+    '''
+
         return input(self.prio_update)
 
-    def input_edited_task(self):
+    def input_edited_task(self) -> dict:
+        '''
+        Получает от пользователя данные, которые нужно обновить в задании.
+
+        Возвращает:
+            Данные, представленные в виде словаря, в котором
+            ключи - названия полей в файле с данными, а
+            значения - введенные пользователем данные.
+
+            Если пользователь вводит название поля, которого
+            нет в файле данных, то данное поле не записывается в словарь, а
+            пользователю выводится сообщение об этом.
+        '''
         params = {}
-        categories = AskUser().get_categories_to_update().lower().split()
+        categories = self.get_categories_to_update().lower().split()
         for item in categories:
             if item in RU_TO_ENG.keys():
                 if item == 'название':
-                    params[RU_TO_ENG[item]] = AskUser().get_title_update()
+                    params[RU_TO_ENG[item]] = self.get_title_update()
                 if item == 'описание':
-                    params[RU_TO_ENG[item]] = AskUser(
-                        ).get_description_update()
+                    params[RU_TO_ENG[item]] = self.get_description_update()
                 if item == 'категория':
-                    params[RU_TO_ENG[item]] = AskUser().get_category_update()
+                    params[RU_TO_ENG[item]] = self.get_category_update()
                 if item == 'срок':
-                    params[RU_TO_ENG[item]] = AskUser().get_date_update()
+                    params[RU_TO_ENG[item]] = self.get_date_update()
                 if item == 'приоритет':
-                    params[RU_TO_ENG[item]] = AskUser().get_prio_update()
+                    params[RU_TO_ENG[item]] = self.get_prio_update()
             else:
                 print(f'Такого поля "{item}" не существует, ',
                       'перехожу к следующему')
@@ -81,11 +137,14 @@ class AskUser():
 
     def input_id(self) -> int:
         '''
-        Функция для получения корректного значения id
-        из пользовательского ввода.
+        Получает от пользователя id задачи.
 
         Возвращает:
-            id(int): id задачи, с которой необходимо работать.
+            id, введенное пользователем.
+
+            Если пользователь вводит что-либо, кроме целого числа,
+            то выводится сообщение об ошибке и предложение ввести
+            корректые данные.
         '''
 
         id = input('Введите id\n')
