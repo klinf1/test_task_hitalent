@@ -12,8 +12,8 @@ class AskUser():
     '''
     Класс, работающий с пользовательским вводом.
 
-    Если введенные данные не соответствуют указанным
-    типам значений, то пользоватю будет выведено сообщение об ошибке
+    Если введенные данные не соответствуют типам по умолчанию,
+    то пользоватю будет выведено сообщение об ошибке
     и предложено ввести значение снова.
 
     Методы:
@@ -651,13 +651,15 @@ def main():
     print('Добро пожаловать в менеджер задач!')
     while True:
         data = TaskManager().read_all(FILE_NAME)
-        print('Что бы вы хотели сделать? Доступнные варианты: ',
-              'Создать, Просмотреть все, Найти по категории, '
-              'Найти по статусу, Найти по ключевым словам, ',
-              'Найти по id, Изменить, Отметить выполнение',
-              'Удалить по id, Удалить категорию ')
+        msg = ('Что бы вы хотели сделать? Доступнные варианты:\n',
+               '1) Создать\n2) Просмотреть все\n3) Найти по категории\n'
+               '4) Найти по статусу\n5) Найти по ключевым словам\n',
+               '6) Найти по id\n7) Изменить\n8) Отметить выполнение\n',
+               '9) Удалить по id\n10) Удалить категорию.\n')
+        print(''.join(i for i in msg))
+        print('Введите наименование или номер одной из опций')
         todo = input().lower()
-        if todo == 'создать':
+        if todo == 'создать' or todo == '1':
             id = get_id(data)
             print('Для создания новой задачи укажите следующие данные:')
             title = AskUser().get_title()
@@ -668,30 +670,30 @@ def main():
             new_task_data = [id, title, description, category, date, prio,]
             print(new_task_data)
             TaskManager().create_new_task(new_task_data, FILE_NAME)
-        elif todo == 'просмотреть все':
+        elif todo == 'просмотреть все' or todo == '2':
             if data == []:
                 print('Сейчас нет активных задач')
             for row in data:
                 print(row)
-        elif todo == 'найти по категории':
+        elif todo == 'найти по категории' or todo == '3':
             category = input('Введите категорию\n')
             params = {'category': category}
             for item in TaskManager().search_params(data, params):
                 print(item)
-        elif todo == 'найти по статусу':
+        elif todo == 'найти по статусу' or todo == '4':
             status = input('Введите статус: выполнено или не выполнено\n')
             params = {'status': status.lower()}
             for item in TaskManager().search_params(data, params):
                 print(item)
-        elif todo == 'найти по ключевым словам':
+        elif todo == 'найти по ключевым словам' or todo == '5':
             keyword = input('Введите ваш запрос\n')
             params = {'keyword': keyword}
             for item in TaskManager().search_params(data, params):
                 print(item)
-        elif todo == 'найти по id':
+        elif todo == 'найти по id' or todo == '6':
             id = AskUser().input_id()
             print(TaskManager().search_id(data, id))
-        elif todo == 'изменить':
+        elif todo == 'изменить' or todo == '7':
             id = AskUser().input_id()
             task = TaskManager().search_id(data, id)
             if type(task) is str:
@@ -702,7 +704,7 @@ def main():
                 params = AskUser().input_edited_task()
                 task = TaskManager().get_updated_task(task, params)
                 TaskManager().update_tasks(data, task, FILE_NAME)
-        elif todo == 'отметить выполнение':
+        elif todo == 'отметить выполнение' or todo == '8':
             id = AskUser().input_id()
             task = TaskManager().search_id(data, id)
             if type(task) is str:
@@ -711,7 +713,7 @@ def main():
                 params = {'status': 'выполнено'}
                 task = TaskManager().get_updated_task(task, params)
                 TaskManager().update_tasks(data, task, FILE_NAME)
-        elif todo == 'удалить по id':
+        elif todo == 'удалить по id' or todo == '9':
             params = {'id': AskUser().input_id()}
             existing_ids = []
             for item in data:
@@ -720,7 +722,7 @@ def main():
                 TaskManager().delete_tasks(data, params, FILE_NAME)
             else:
                 print('Задач с такой категорией нет')
-        elif todo == 'удалить категорию':
+        elif todo == 'удалить категорию' or todo == '10':
             print('Введите категорию. Все задачи',
                   ' из этой категории будут удалены')
             params = {'category': input()}
