@@ -17,8 +17,8 @@ TEST_DATA = [
 ]
 
 
-def test_headers(get_file):
-    main.check_headers(get_file)
+def test_check_file(get_file):
+    main.check_file(get_file)
     with open(get_file, 'r', newline='') as f:
         reader = csv.DictReader(f)
         fields = reader.fieldnames

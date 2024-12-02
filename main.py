@@ -603,15 +603,14 @@ def check_file(filename: str) -> None:
         .csv файлом
     '''
 
-    if not os.path.isfile():
-        with open(filename, 'w', encoding='utf-8', newline='') as file:
-            if os.path.splitext(filename)[1] == '.csv':
+    if os.path.splitext(filename)[1] == '.csv':
+        if not os.path.isfile(filename):
+            with open(filename, 'w', encoding='utf-8', newline='') as file:
                 writer = csv.DictWriter(file, FIELD_NAMES)
                 writer.writeheader()
-            else:
-                error_msg = ('Указанный в настройках файл,'
-                             ' не является .csv файлом!')
-                raise FileError(''.join(i for i in error_msg))
+    else:
+        error_msg = ('Указанный в настройках файл не является .csv файлом!')
+        raise FileError(error_msg)
 
 
 def get_id(data: list[dict]) -> int:
