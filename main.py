@@ -4,14 +4,17 @@ import os
 from datetime import datetime
 
 from settings import FIELD_NAMES, RU_TO_ENG, FILE_NAME
-from exceptions import (CategoryError, DateError, DescriptionError,
-                        PrioError, TitleError, FileError)
+from exceptions import FileError
 from sorting import sort_tasks
 
 
 class AskUser():
     '''
     Класс, работающий с пользовательским вводом.
+
+    Если введенные данные не соответствуют указанным
+    типам значений, то пользоватю будет выведено сообщение об ошибке
+    и предложено ввести значение снова.
 
     Методы:
         get_title
@@ -41,24 +44,104 @@ class AskUser():
     prio_update = 'Введите новый приоритет - низкий, средний или высокий\n'
 
     def get_title(self) -> str:
-        '''Выводит запрос на ввод названия и возвращает введенную строку.'''
-        return input(self.title)
+        '''
+        Выводит запрос на ввод названия и возвращает введенную строку.
+
+        Если полученный ввод - пустая строка, то выводит сообщение об ошибке
+        и предложение ввести название заново.
+        '''
+
+        title = input(self.title)
+        validated = False
+        while validated is False:
+            if title != '':
+                validated = True
+            else:
+                print('У задания должно быть название!')
+                print('Введите название')
+                title = input()
+        return title
 
     def get_description(self) -> str:
-        '''Выводит запрос на ввод описания и возвращает введенную строку.'''
-        return input(self.description)
+        '''
+        Выводит запрос на ввод описания и возвращает введенную строку.
+
+        Если полученный ввод - пустая строка, то выводит сообщение об ошибке
+        и предложение ввести описание заново.
+        '''
+
+        description = input(self.description)
+        validated = False
+        while validated is False:
+            if description != '':
+                validated = True
+            else:
+                print('У задания должно быть описание!')
+                print('Введите описание')
+                description = input()
+        return description
 
     def get_category(self) -> str:
-        '''Выводит запрос на ввод категории и возвращает введенную строку.'''
-        return input(self.category)
+        '''
+        Выводит запрос на ввод категории и возвращает введенную строку.
+
+        Если полученный ввод - пустая строка, то выводит сообщение об ошибке
+        и предложение ввести категорию заново.
+        '''
+
+        cat = input(self.category)
+        validated = False
+        while validated is False:
+            if cat != '':
+                validated = True
+            else:
+                print('У задания должна быть категория!')
+                print('Введите категорию')
+                cat = input()
+        return cat
 
     def get_date(self) -> str:
-        '''Выводит запрос на ввод даты и возвращает введенную строку.'''
-        return input(self.date)
+        '''
+        Выводит запрос на ввод даты и возвращает введенную строку.
+
+        Если дата не соответствует формату DD-MM-YYYY, то выводит сообщение об
+        ошибке и предложение ввести дату заново.
+        '''
+
+        validated = False
+        date = input(self.date)
+        while validated is False:
+            try:
+                datetime.strptime(date, '%d-%m-%Y').strftime(
+                    '%d-%m-%Y'
+                )
+                validated = True
+            except Exception:
+                print('Срок выполнения указан неверно!')
+                print('Укажите дату, к которой задачу нужно выполнить ',
+                      'в формате DD-MM-YYYY')
+                date = input()
+        return date
 
     def get_prio(self) -> str:
-        '''Выводит запрос на ввод приоритета и возвращает введенную строку.'''
-        return input(self.prio)
+        '''
+        Выводит запрос на ввод приоритета и возвращает введенную строку.
+
+        Если полученный ввод не соответствует заданным значениям,
+        то выводит сообщение об ошибке
+        и предложение ввести приоритет заново.
+        '''
+
+        prio = input(self.prio)
+        validated = False
+        while validated is False:
+            if prio in ['низкий', 'средний', 'высокий']:
+                validated = True
+            else:
+                print('Приоритет может быть низким средним или высоким!')
+                print('Введите приоритет')
+                prio = input()
+        return prio
 
     def get_categories_to_update(self) -> str:
         '''Выводит запрос на ввод категорий для обновления и
@@ -69,39 +152,104 @@ class AskUser():
         return input()
 
     def get_title_update(self) -> str:
-        '''Выводит запрос на ввод обновленного названия и
-        возвращает введенную строку.
+        '''
+        Выводит запрос на ввод названия и возвращает введенную строку.
+
+        Если полученный ввод - пустая строка, то выводит сообщение об ошибке
+        и предложение ввести название заново.
         '''
 
-        return input(self.title_update)
+        title = input(self.title_update)
+        validated = False
+        while validated is False:
+            if title != '':
+                validated = True
+            else:
+                print('У задания должно быть название!')
+                print('Введите название')
+                title = input()
+        return title
 
     def get_description_update(self) -> str:
-        '''Выводит запрос на ввод обновленного описания и
-        возвращает введенную строку.
+        '''
+        Выводит запрос на ввод описания и возвращает введенную строку.
+
+        Если полученный ввод - пустая строка, то выводит сообщение об ошибке
+        и предложение ввести описание заново.
         '''
 
-        return input(self.description_update)
+        description = input(self.description_update)
+        validated = False
+        while validated is False:
+            if description != '':
+                validated = True
+            else:
+                print('У задания должно быть описание!')
+                print('Введите описание')
+                description = input()
+        return description
 
     def get_category_update(self) -> str:
-        '''Выводит запрос на ввод обновленной категории и
-        возвращает введенную строку.
+        '''
+        Выводит запрос на ввод категории и возвращает введенную строку.
+
+        Если полученный ввод - пустая строка, то выводит сообщение об ошибке
+        и предложение ввести категорию заново.
         '''
 
-        return input(self.category_update)
+        cat = input(self.category_update)
+        validated = False
+        while validated is False:
+            if cat != '':
+                validated = True
+            else:
+                print('У задания должна быть категория!')
+                print('Введите категорию')
+                cat = input()
+        return cat
 
     def get_date_update(self) -> str:
-        '''Выводит запрос на ввод обновленной даты и
-        возвращает введенную строку.
+        '''
+        Выводит запрос на ввод даты и возвращает введенную строку.
+
+        Если дата не соответствует формату DD-MM-YYYY, то выводит сообщение об
+        ошибке и предложение ввести дату заново.
         '''
 
-        return input(self.date_update)
+        validated = False
+        date = input(self.date)
+        while validated is False:
+            try:
+                datetime.strptime(date, '%d-%m-%Y').strftime(
+                    '%d-%m-%Y'
+                )
+                validated = True
+            except ValueError:
+                print('Срок выполнения указан неверно!')
+                print('Укажите дату, к которой задачу нужно выполнить ',
+                      'в формате DD-MM-YYYY')
+                date = input()
+        return date
 
     def get_prio_update(self) -> str:
-        '''Выводит запрос на ввод обновленного приоритета и
-        возвращает введенную строку.
-    '''
+        '''
+        Выводит запрос на ввод приоритета и возвращает введенную строку.
 
-        return input(self.prio_update)
+        Если полученный ввод не соответствует заданным значениям,
+        то выводит сообщение об ошибке
+        и предложение ввести приоритет заново.
+        '''
+
+        prio = input(self.prio_update)
+        validated = False
+        while validated is False:
+            if prio in ['низкий', 'средний', 'высокий']:
+                validated = True
+            else:
+                print('Приоритет может быть низким средним или высоким!')
+                print('Введите приоритет')
+                prio = input()
+        return prio
 
     def input_edited_task(self) -> dict:
         '''
@@ -213,98 +361,6 @@ class Task():
         self.prio = prio
         self.status = status
 
-    @property
-    def prio(self):
-        '''
-        Получает или возвращает приоритет задачи.
-
-        Исключения:
-            Вызвает PrioError, если приоритет не входит в
-            заявленные - [низкий, средний, высокий].
-        '''
-
-        return self._prio
-
-    @prio.setter
-    def prio(self, prio):
-        if prio not in ['низкий', 'средний', 'высокий']:
-            raise PrioError(
-                'Приоритет может быть только низким, средним или высоким'
-            )
-        self._prio = prio
-
-    @property
-    def title(self):
-        '''
-        Получает или возвращает название задачи.
-
-        Исключения:
-            Вызвает TitleError, если название -
-            пустая строка.
-        '''
-        return self._title
-
-    @title.setter
-    def title(self, title):
-        if title == '':
-            raise TitleError('У задания должно быть название!')
-        self._title = title
-
-    @property
-    def description(self):
-        '''
-        Получает или возвращает описание задачи.
-
-        Исключения:
-            Вызвает DecriptionError, если описание -
-            пустая строка.
-        '''
-        return self._description
-
-    @description.setter
-    def description(self, description):
-        if description == '':
-            raise DescriptionError('У задания должно быть описание!')
-        self._description = description
-
-    @property
-    def category(self):
-        '''
-        Получает или возвращает название категории.
-
-        Исключения:
-            Вызвает CategoryError, если категория -
-            пустая строка.
-        '''
-        return self._category
-
-    @category.setter
-    def category(self, category):
-        if category == '':
-            raise CategoryError('У задания должна быть категория!')
-        self._category = category
-
-    @property
-    def date(self):
-        '''
-        Получает или возвращает срок выполнения задачи.
-
-        Исключения:
-            Вызвает DateError, если дата введена в формате,
-            отличном от DD-MM-YYYY.
-        '''
-        return self._date
-
-    @date.setter
-    def date(self, date):
-        try:
-            datetime.strptime(date, '%d-%m-%Y').strftime(
-                '%d-%m-%Y'
-            )
-        except ValueError:
-            raise DateError('Срок выполнения указан неверно!')
-        self._date = date
-
     def get_dict(self) -> dict:
         '''
         Формирует словарь на основе экземпляра класса Task.
@@ -397,49 +453,6 @@ class TaskManager():
                 return data[mid]
         return 'Задачи с таким id не существует'
 
-    def validate_task(self, params: dict) -> Task:
-        '''
-        Метод для проверки правильности введенных пользователем данных
-        перед записью новой задачи.
-
-        Если данные были введены неверно, изменяет словарь params,
-        получая новые данные от пользователя.
-
-        Аргументы:
-            params: словарь, ключи которого - названия полей,
-            а значения - данные о новой задаче.
-
-        Возвращает:
-            Экземпляр класса Task с подтвержденными данными.
-        '''
-        validated = False
-        while validated is False:
-            try:
-                task = Task(*list(params.values()))
-                validated = True
-            except TitleError as e:
-                print(e)
-                params['title'] = input('Введите название\n')
-            except DescriptionError as e:
-                print(e)
-                print('Введите краткое описание задачи')
-                params['description'] = input()
-            except PrioError as e:
-                print(e)
-                print('Введите приоритет: низкий, средний или высокий')
-                params['prio'] = input()
-            except DateError as e:
-                print(e)
-                print('Укажите дату, к которой задачу нужно выполнить ',
-                      'в формате DD-MM-YYYY')
-                params['date'] = input()
-            except CategoryError as e:
-                print(e)
-                print('Укажите название категории, ',
-                      'к которой относится задача\n')
-                params['category'] = input()
-        return task
-
     def read_all(self, filename: str) -> list[dict]:
         '''
         Считывает данные из указанного файла.
@@ -458,11 +471,8 @@ class TaskManager():
 
     def create_new_task(self, new_task_data: list, filename: str) -> None:
         '''
-        Проверяет правильность данных и вызывает Task.write_csv.
-
-        Перед записью вызывает TaskManager.validate_tasks для проверки
-        правильности ввода и получения экземпляра Task на основе
-        переданных данных.
+        Создает экземпляр Task с введенными данными и вызывает
+        Task.write_csv
 
         Аргументы:
             new_task_data: данные новой задачи.
@@ -470,10 +480,7 @@ class TaskManager():
             записать данные.
         '''
 
-        params = {}
-        for i in range(len(new_task_data)):
-            params[FIELD_NAMES[i]] = new_task_data[i]
-        task = self.validate_task(params)
+        task = Task(*new_task_data)
         task.write_csv(filename)
 
     def search_params(self, data: list[dict], params: dict) -> list[dict]:
@@ -556,11 +563,7 @@ class TaskManager():
             filename: str,
             ) -> None:
         '''
-        Проверяет правильность данных и вызывает Task.update_csv.
-
-        Перед записью вызывает TaskManager.validate_tasks для проверки
-        правильности ввода и получения экземпляра Task на основе
-        переданных данных.
+        Обновляет данные задачи.
 
         Аргументы:
             data: список словарей всех задач
@@ -568,7 +571,7 @@ class TaskManager():
             filename: строка с путем к файлу, в который нужно
             записать данные.
         '''
-        new_task = self.validate_task(params)
+        new_task = Task(*list(params.values()))
         new_task.update_csv(data, filename)
         print('Задача успешно обновлена')
 
@@ -663,6 +666,7 @@ def main():
             date = AskUser().get_date()
             prio = AskUser().get_prio()
             new_task_data = [id, title, description, category, date, prio,]
+            print(new_task_data)
             TaskManager().create_new_task(new_task_data, FILE_NAME)
         elif todo == 'просмотреть все':
             if data == []:
