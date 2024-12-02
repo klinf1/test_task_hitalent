@@ -16,6 +16,7 @@
 > cd *путь к папке*/test_task_hitalent
 4. Создайте и запустите виртуальное окружение
 > python -m venv venv
+>
 > sourse venv/Scripts/activate
 5. Установите зависимости
 > pip install -r requirements.txt
