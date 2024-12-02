@@ -40,7 +40,7 @@ class AskUser():
         return input(self.prio)
 
     def get_categories_to_update(self):
-        print(self.categories_to_update)
+        print(''.join(i for i in self.categories_to_update))
         return input()
 
     def get_title_update(self):
