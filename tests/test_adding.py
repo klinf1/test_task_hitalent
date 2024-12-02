@@ -1,7 +1,8 @@
 import csv
 
-from .. import main, sorting
-from ..settings import FIELD_NAMES
+import pytest
+
+from .. import main, settings, sorting
 
 
 TEST_DATA = [
@@ -17,13 +18,17 @@ TEST_DATA = [
 ]
 
 
-def test_check_file(get_file):
+def test_check_file(get_file, get_wrong_file):
     main.check_file(get_file)
     with open(get_file, 'r', newline='') as f:
         reader = csv.DictReader(f)
         fields = reader.fieldnames
-    assert fields == FIELD_NAMES, ('Проверьте, что заголовок csv',
-                                   ' файла заполняется корректно')
+    assert fields == settings.FIELD_NAMES, ('Проверьте, что заголовок csv',
+                                            ' файла заполняется корректно')
+    with pytest.raises(Exception) as e:
+        main.check_file(get_wrong_file)
+    assert e, ('Проврьте, что при попытке создать файл с ',
+               'неверным расширением вызывается исключение')
 
 
 def test_create_new_correct_task(get_file):
@@ -31,7 +36,7 @@ def test_create_new_correct_task(get_file):
         '1', 'test_title', 'test_desc', 'test_cat', '02-12-2024', 'высокий'
     ]
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, FIELD_NAMES)
+        writer = csv.DictWriter(file, settings.FIELD_NAMES)
         writer.writeheader()
     main.TaskManager().create_new_task(test_data, get_file)
     with open(get_file, 'r', encoding='utf-8', newline='') as f:
@@ -46,7 +51,7 @@ def test_create_new_correct_task(get_file):
 
 def test_adding_wrong_date(get_file, capsys):
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, FIELD_NAMES)
+        writer = csv.DictWriter(file, settings.FIELD_NAMES)
         writer.writeheader()
     test_data = [
         1, 'test_title', 'test_desc', 'test_cat', 'wrong_date', 'высокий'
@@ -65,7 +70,7 @@ def test_adding_wrong_date(get_file, capsys):
 
 def test_adding_wrong_prio(get_file, capsys):
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, FIELD_NAMES)
+        writer = csv.DictWriter(file, settings.FIELD_NAMES)
         writer.writeheader()
     test_data = [
         1, 'test_title', 'test_desc', 'test_cat', '02-12-2024', 'wrong_prio'
@@ -128,7 +133,7 @@ def test_sorting():
 
 def test_empty(get_file, capsys):
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, FIELD_NAMES)
+        writer = csv.DictWriter(file, settings.FIELD_NAMES)
         writer.writeheader()
     empty_title = [
         1, '', 'test_desc', 'test_cat', '02-12-2024', 'высокий'
@@ -178,7 +183,7 @@ def test_create_multiple_tasks(get_file):
         ['3', 'test_title3', 'test_desc', 'test_cat', '02-12-2024', 'низкий'],
     ]
     with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, FIELD_NAMES)
+        writer = csv.DictWriter(file, settings.FIELD_NAMES)
         writer.writeheader()
     for item in test_data:
         main.TaskManager().create_new_task(item, get_file)
