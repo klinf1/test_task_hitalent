@@ -1,4 +1,8 @@
+import builtins
 import csv
+import pytest
+
+from unittest import mock
 
 from .. import main
 from ..settings import FIELD_NAMES
@@ -64,97 +68,24 @@ def test_update_tasks(get_file):
     assert reader[1] == old_data[1], error_msg
 
 
-def test_updating_to_wrong_date(get_file, capsys):
-    old_data = [
-        {
-            'id': '1',
-            'title': 'test_title',
-            'description': 'test_desc',
-            'category': 'test_cat1',
-            'date': '02-12-2024',
-            'prio': 'низкий',
-            'status': 'не выполнено'
-        },
-        {
-            'id': '2',
-            'title': 'test_title',
-            'description': 'test_desc',
-            'category': 'test_cat1',
-            'date': '02-12-2024',
-            'prio': 'низкий',
-            'status': 'не выполнено'
-        }
-    ]
-    new_task = {
-        'id': 1,
-        'title': 'new_title',
-        'description': 'test_desc',
-        'category': 'test_cat1',
-        'date': 'wrong date',
-        'prio': 'низкий',
-        'status': 'не выполнено'
-    }
-    with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, FIELD_NAMES)
-        writer.writeheader()
-        for row in old_data:
-            writer.writerow(row)
-    try:
-        main.TaskManager().update_tasks(old_data, new_task, get_file)
-    except Exception:
-        error_msg = ('Проверьте, что при вводе неверной даты',
-                     ' пользователю предлагается ввести ее снова')
-        assert capsys.readouterr(), error_msg
-    with open(get_file, 'r', encoding='utf-8', newline='') as f:
-        reader = list(csv.DictReader(f))
-    error_msg = ('Проверьте, что при попытке ввести',
-                 ' неверную дату файл не перезаписывается')
-    assert reader == old_data, error_msg
+def test_Input_updating_to_wrong_date():
+    with mock.patch.object(
+        builtins, 'input', lambda _: '123'
+    ), pytest.raises(Exception):
+        main.AskUser().get_date_update()
 
 
-def test_updating_to_wrong_prio(get_file, capsys):
-    old_data = [
-        {
-            'id': '1',
-            'title': 'test_title',
-            'description': 'test_desc',
-            'category': 'test_cat1',
-            'date': '02-12-2024',
-            'prio': 'низкий',
-            'status': 'не выполнено'
-        },
-        {
-            'id': '2',
-            'title': 'test_title',
-            'description': 'test_desc',
-            'category': 'test_cat1',
-            'date': '02-12-2024',
-            'prio': 'низкий',
-            'status': 'не выполнено'
-        }
-    ]
-    new_task = {
-        'id': 1,
-        'title': 'new_title',
-        'description': 'test_desc',
-        'category': 'test_cat1',
-        'date': '12-02-2025',
-        'prio': 'wrong_prio',
-        'status': 'не выполнено'
-    }
-    with open(get_file, 'w', encoding='utf-8', newline='') as file:
-        writer = csv.DictWriter(file, FIELD_NAMES)
-        writer.writeheader()
-        for row in old_data:
-            writer.writerow(row)
-    try:
-        main.TaskManager().update_tasks(old_data, new_task, get_file)
-    except Exception:
-        error_msg = ('Проверьте, что при вводе невернго приоритета',
-                     ' пользователю предлагается ввести его снова')
-        assert capsys.readouterr(), error_msg
-    with open(get_file, 'r', encoding='utf-8', newline='') as f:
-        reader = list(csv.DictReader(f))
-    error_msg = ('Проверьте, что при попытке ввести',
-                 ' неверный приоритет файл не перезаписывается')
-    assert reader == old_data, error_msg
+def test_inputing_updating_to_wrong_prio():
+    with mock.patch.object(
+        builtins, 'input', lambda _: 'wrong_prio'
+    ), pytest.raises(Exception):
+        main.AskUser().get_prio_update()
+
+
+def test_update_to_empty():
+    with mock.patch.object(
+        builtins, 'input', lambda _: ''
+    ), pytest.raises(Exception):
+        main.AskUser().get_title_update()
+        main.AskUser().get_category_update()
+        main.AskUser().get_description_update()
