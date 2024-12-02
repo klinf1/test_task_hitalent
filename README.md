@@ -11,7 +11,7 @@
 1. Сделайте форк репозитория
 > 'https://github.com/klinf1/test_task_hitalent/fork'
 2. Клонируйте репозиторий на компьютер
-> git clone git@github.com:*your github id*/test_task_hitalent.git
+> git clone git@github.com:*your github id*/test_task_hitalent.git (*название папки, если хотите чтобы ее название не совпадало с названием репозитория*)
 3. Перейдите в папку с проектом
 > cd *путь к папке*/test_task_hitalent
 4. Создайте и запустите виртуальное окружение
